@@ -1,0 +1,40 @@
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.App {
+  min-height: 100vh;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Existing grid/layout classes */
+.savesection {
+  /* Add section-specific styles here */
+}
+
+.attachmentdiv {
+  /* Add attachment row styles here */
+}
+
+.savebuttonmargin {
+  margin-top: 10px;
+}
+
+.savebuttonmargin-placement {
+  margin-left: 0px !important;
+  margin-right: 0px !important;
+}
+
+.paddingtopalldivs {
+  padding-top: 12px;
+}
+div#maindiv {
+  margin-left: 5px;
+  margin-right: 5px;
+}

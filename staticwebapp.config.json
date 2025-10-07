@@ -1,0 +1,22 @@
+{
+  "networking": {
+    "allowedIpRanges": [
+      "172.201.161.174/32",
+      "4.180.129.87/32"
+    ]
+  },
+  "globalHeaders": {
+    "Content-Security-Policy": "default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; connect-src *"
+  },
+  "mimeTypes": {
+    ".json": "application/json",
+    ".js": "application/javascript",
+    ".css": "text/css",
+    ".html": "text/html"
+  },
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html"
+    }
+  }
+}

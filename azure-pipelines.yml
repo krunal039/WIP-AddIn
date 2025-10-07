@@ -1,0 +1,64 @@
+trigger:
+  branches:
+    include:
+      - "*"
+  paths:
+    include:
+      - "*"
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: "GSI_Main/GSI.pipeline.templates"      
+      ref: refs/heads/main 
+      endpoint: "ser-munichre-na"
+
+parameters:
+  - name: application
+    type: object
+    default:
+      name: "GSI.UWB.Ingestion.OutlookAddIn"
+      path: "."
+      vstsFeed:
+        name: "NpmJs-GSI"
+        organisation: "mrprojects-emea"
+        serviceConnection: "ser-mrprojects-emea-artifacts-promote"
+      configPath: "app-settings"
+      secretPath: "secret-settings"
+  - name: environments
+    type: object
+    default:
+      - name: "dev-weu"
+        agentPool: "Azure Pipelines"
+        adoLibrary: "uwb-outlook-plugin-dev"
+        adoEnvironment: "OC-GSI-UWB-DEV"
+        staticWebApp:
+          name: "swa-gsi-email-ingestion-request-dev-weu"
+          resourceGroup: "rg-gsi-uwb-outlook-plugin-dev-weu"
+        keyVault:
+          kvName: "kv-gsi-uwb-op-dev-weu"
+          resourceGroupName: "rg-gsi-uwb-outlook-plugin-dev-weu"
+        azureResourceManagerServiceConnection: "GSI4-UWB-PP-DevOps-NonProd"
+      - name: "qa-weu"
+        agentPool: "Azure Pipelines"
+        adoLibrary: "uwb-outlook-plugin-qa"
+        adoEnvironment: "OC-GSI-UWB-QA"
+        staticWebApp:
+          name: "swa-gsi-email-ingestion-request-qa-weu"
+          resourceGroup: "rg-gsi-uwb-outlook-plugin-qa-weu"
+        keyVault:
+          kvName: "kv-gsi-uwb-op-qa-weu"
+          resourceGroupName: "rg-gsi-uwb-outlook-plugin-qa-weu"
+        azureResourceManagerServiceConnection: "GSI4-UWB-PP-DevOps-NonProd"        
+
+stages:
+  - template: "npm-ci.yml@templates"
+    parameters:
+      vmImage: "ubuntu-latest"
+      application: ${{parameters.application}}
+      nodeVersion: "24.x"
+  - template: "static-web-app-deploy.yml@templates"
+    parameters:
+      environments: ${{parameters.environments}}
+      application: ${{parameters.application}}

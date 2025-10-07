@@ -1,0 +1,7 @@
+[
+  {
+    "name": "AZURE-CLIENT-SECRET",
+    "value": "{{AZURE_CLIENT_SECRET}}",
+    "expiry": "7/15/2027 0:00:00 PM"
+  }
+]
