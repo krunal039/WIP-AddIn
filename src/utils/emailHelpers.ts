@@ -1,25 +1,59 @@
 export const getSubject = (item: Office.MessageRead | Office.MessageCompose): Promise<string> => {
   return new Promise((resolve, reject) => {
-    if (typeof (item as Office.MessageCompose).subject?.getAsync === 'function') {
-      (item as Office.MessageCompose).subject.getAsync((res) => {
-        res.status === Office.AsyncResultStatus.Succeeded ? resolve(res.value || '') : reject(res.error?.message || 'Unknown error');
-      });
-    } else {
-      resolve((item as Office.MessageRead).subject || '');
+    try {
+      if (typeof (item as Office.MessageCompose).subject?.getAsync === 'function') {
+        (item as Office.MessageCompose).subject.getAsync((res) => {
+          if (res.status === Office.AsyncResultStatus.Succeeded) {
+            const subject = res.value || '';
+            console.log('getSubject (compose mode):', subject, 'type:', typeof subject);
+            // Ensure we always return a string
+            resolve(String(subject));
+          } else {
+            console.error('getSubject (compose mode) failed:', res.error);
+            // Return empty string instead of rejecting to prevent crashes
+            resolve('');
+          }
+        });
+      } else {
+        const subject = (item as Office.MessageRead).subject || '';
+        console.log('getSubject (read mode):', subject, 'type:', typeof subject);
+        // Ensure we always return a string
+        resolve(String(subject));
+      }
+    } catch (error) {
+      console.error('getSubject error:', error);
+      // Return empty string instead of rejecting to prevent crashes
+      resolve('');
     }
   });
 };
 
 export const getSender = (item: Office.MessageRead | Office.MessageCompose): Promise<string> => {
   return new Promise((resolve, reject) => {
-    if (typeof (item as Office.MessageCompose).from?.getAsync === 'function') {
-      (item as Office.MessageCompose).from.getAsync((res) => {
-        res.status === Office.AsyncResultStatus.Succeeded
-          ? resolve(res.value?.emailAddress || Office.context.mailbox.userProfile.emailAddress)
-          : reject(res.error?.message || 'Unknown error');
-      });
-    } else {
-      resolve((item as Office.MessageRead).from?.emailAddress || Office.context.mailbox.userProfile.emailAddress);
+    try {
+      if (typeof (item as Office.MessageCompose).from?.getAsync === 'function') {
+        (item as Office.MessageCompose).from.getAsync((res) => {
+          if (res.status === Office.AsyncResultStatus.Succeeded) {
+            const sender = res.value?.emailAddress || Office.context.mailbox.userProfile.emailAddress;
+            console.log('getSender (compose mode):', sender, 'type:', typeof sender);
+            // Ensure we always return a string
+            resolve(String(sender));
+          } else {
+            console.error('getSender (compose mode) failed:', res.error);
+            // Return user email instead of rejecting to prevent crashes
+            resolve(String(Office.context.mailbox.userProfile.emailAddress));
+          }
+        });
+      } else {
+        const sender = (item as Office.MessageRead).from?.emailAddress || Office.context.mailbox.userProfile.emailAddress;
+        console.log('getSender (read mode):', sender, 'type:', typeof sender);
+        // Ensure we always return a string
+        resolve(String(sender));
+      }
+    } catch (error) {
+      console.error('getSender error:', error);
+      // Return user email instead of rejecting to prevent crashes
+      resolve(String(Office.context.mailbox.userProfile.emailAddress));
     }
   });
 };
@@ -64,6 +98,64 @@ export const getInternetMessageId = (item: Office.MessageRead | Office.MessageCo
       });
     } else {
       resolve(null);
+    }
+  });
+};
+
+/**
+ * Detects if the current email is from a shared mailbox
+ * @param item The Office.js mailbox item
+ * @returns Promise<{isShared: boolean, mailboxEmail?: string}> - Whether it's shared and the mailbox email
+ */
+export const detectSharedMailbox = (item: Office.MessageRead | Office.MessageCompose): Promise<{isShared: boolean, mailboxEmail?: string}> => {
+  return new Promise((resolve) => {
+    try {
+      // Get the current user's email address
+      const currentUserEmail = Office.context.mailbox.userProfile.emailAddress;
+      
+      // Use Office.js API to detect shared mailbox
+      if (typeof item.getSharedPropertiesAsync === 'function') {
+        item.getSharedPropertiesAsync((result) => {
+          if (result.status === Office.AsyncResultStatus.Succeeded && result.value) {
+            // This is a shared mailbox - get the owner's email
+            const sharedProperties = result.value;
+            const mailboxEmail = sharedProperties.owner || sharedProperties.targetMailbox || currentUserEmail;
+            
+            console.log('Shared mailbox detected:', {
+              isShared: true,
+              mailboxEmail: mailboxEmail,
+              owner: sharedProperties.owner,
+              targetMailbox: sharedProperties.targetMailbox
+            });
+            
+            resolve({
+              isShared: true,
+              mailboxEmail: mailboxEmail
+            });
+          } else {
+            // Not a shared mailbox or API not supported
+            console.log('Personal mailbox detected or getSharedPropertiesAsync not supported');
+            resolve({
+              isShared: false,
+              mailboxEmail: currentUserEmail
+            });
+          }
+        });
+      } else {
+        // Fallback: Check if we're in a different context
+        // This is a conservative approach for when the API isn't available
+        console.log('getSharedPropertiesAsync not available, assuming personal mailbox');
+        resolve({
+          isShared: false,
+          mailboxEmail: currentUserEmail
+        });
+      }
+    } catch (error) {
+      console.error('Error detecting shared mailbox:', error);
+      resolve({
+        isShared: false,
+        mailboxEmail: Office.context.mailbox.userProfile.emailAddress
+      });
     }
   });
 }; 

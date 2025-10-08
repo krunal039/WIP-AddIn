@@ -6,6 +6,8 @@ import {
   ResponsiveMode,
   Toggle,
   PrimaryButton,
+  MessageBar,
+  MessageBarType,
 } from "@fluentui/react";
 import './SharedGrid.css';
 
@@ -31,6 +33,8 @@ interface BUProductsSectionProps {
   onSubmit: () => void;
   emailSubject: string;
   isDraftEmail: boolean;
+  fileValidationError?: string | null;
+  isSubmitDisabled?: boolean;
 }
 
 const BUProductsSection: React.FC<BUProductsSectionProps> = ({
@@ -45,12 +49,46 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = ({
   onSubmit,
   emailSubject,
   isDraftEmail,
+  fileValidationError,
+  isSubmitDisabled: externalIsSubmitDisabled,
 }) => {
   // Check if submit button should be disabled
-  const isSubmitDisabled = isDraftEmail && (!emailSubject || emailSubject.trim() === '');
+  const isSubmitDisabled = externalIsSubmitDisabled || (isDraftEmail && (!emailSubject || emailSubject.trim() === ''));
   
   return (
     <div className="ms-Grid" dir="ltr" id="maindiv">
+      {/* File Validation Error Message */}
+      {fileValidationError && (
+        <div className="ms-Grid-row" style={{ marginBottom: '16px' }}>
+          <div className="ms-Grid-col ms-sm12">
+            <MessageBar
+              messageBarType={MessageBarType.error}
+              isMultiline={false}
+              styles={{
+                root: {
+                  backgroundColor: '#fdf2f2',
+                  border: '1px solid #d13438',
+                  borderRadius: '4px',
+                },
+                content: {
+                  display: 'flex',
+                  alignItems: 'center',
+                },
+                icon: {
+                  color: '#d13438',
+                },
+                text: {
+                  color: '#d13438',
+                  fontWeight: '500',
+                }
+              }}
+            >
+              {fileValidationError}
+            </MessageBar>
+          </div>
+        </div>
+      )}
+      
       <div className="ms-Grid savesection">
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6 paddingtopalldivs">

@@ -14,7 +14,23 @@ export async function getGraphToken(): Promise<AuthenticationResult | null> {
     await msalInstance.initialize();
   }
   const account = getCurrentAccount();
-  const graphScopes = (process.env.REACT_APP_AZURE_GRAPH_SCOPES || "Mail.Send,Mail.ReadWrite,openid,profile,offline_access").split(",");
+  const graphScopes = (process.env.REACT_APP_AZURE_GRAPH_SCOPES || "Mail.Send,Mail.ReadWrite,Mail.Read.Shared,Mail.Send.Shared,openid,profile,offline_access").split(",");
+  
+  // Debug account information
+  console.log('MSAL Account:', account ? {
+    username: account.username,
+    localAccountId: account.localAccountId,
+    homeAccountId: account.homeAccountId
+  } : 'No account found');
+  
+  // Debug Office context
+  try {
+    const officeUserEmail = Office.context.mailbox.userProfile.emailAddress;
+    console.log('Office context user:', officeUserEmail);
+  } catch (error) {
+    console.warn('Could not get Office context user:', error);
+  }
+  
   try {
     if (account) {
       return await msalInstance.acquireTokenSilent({

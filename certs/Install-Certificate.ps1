@@ -1,4 +1,4 @@
-$certPath = "C:\Path\To\Your\certs\localhost-cert.pem"
+$certPath = "C:\Code\WIP-AddIn\certs\localhost-cert.pem"
 
 # Convert PEM to a cert object
 $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2

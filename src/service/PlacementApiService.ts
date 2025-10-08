@@ -39,7 +39,11 @@ class PlacementApiService {
   }
 
   public sanitizeEMLFileName(input: string): string {
-  if (!input) return "email";
+  // Ensure input is a string and not empty
+  if (!input || typeof input !== 'string') {
+    console.log('sanitizeEMLFileName: Invalid input:', { input, type: typeof input });
+    return "email";
+  }
 
   // Lowercase
   let str = input.toLowerCase();

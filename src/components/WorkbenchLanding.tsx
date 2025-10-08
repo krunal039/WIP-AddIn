@@ -31,6 +31,7 @@ import DebugService from "../service/DebugService";
 import OfficeModeService from "../service/OfficeModeService";
 import { checkDuplicateSubmission } from "../utils/duplicateDetection";
 import { submitPlacement } from "../utils/placementSubmission";
+import FileValidationService, { FileValidationResult } from "../service/FileValidationService";
 import LandingSection from "./LandingSection";
 import BUProductsSection from "./BUProductsSection";
 import WorkbenchHeader from "./WorkbenchHeader";
@@ -96,6 +97,8 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
   const [emailSubject, setEmailSubject] = useState<string>("");
   const [isDraftEmail, setIsDraftEmail] = useState<boolean>(false);
   const [isDuplicate, setIsDuplicate] = useState<boolean>(false);
+  const [fileValidationResult, setFileValidationResult] = useState<FileValidationResult>({ isValid: true, errors: [] });
+  const [isValidatingFiles, setIsValidatingFiles] = useState<boolean>(false);
 
   // Handlers
 
@@ -188,6 +191,13 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
       setEmailSubject("");
     }
 
+    // Validate email attachments
+    const filesValid = await validateEmailFiles(item);
+    if (!filesValid) {
+      DebugService.warn("File validation failed - showing error message");
+      // Don't return here - let the UI show the error message
+    }
+
     // Trigger early save when user first interacts with UI
     try {
       await workbenchService.attemptEarlySave(item);
@@ -205,11 +215,12 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
 
     const item = Office.context.mailbox.item;
 
-    // Check if item is a message and in compose mode
+    // Check if item is a message
     if (item.itemType === Office.MailboxEnums.ItemType.Message) {
       const messageCompose = item as Office.MessageCompose;
-
-      if (messageCompose.body) {
+      
+      // Check if we're in compose mode by checking if prependAsync is available
+      if (messageCompose.body && typeof messageCompose.body.prependAsync === 'function') {
         const bannerHtml = `<div style="padding:10px;font-weight:bold;color:#00796b;margin-bottom:10px;">Sent for Ingestion</div>`;
 
         return new Promise<void>((resolve, reject) => {
@@ -228,12 +239,13 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
           );
         });
       } else {
-        console.error("Body is not available on this item.");
-        return Promise.reject("Body not available.");
+        // We're in read mode, can't add banner
+        console.log("Cannot add banner in read mode - item is not in compose mode.");
+        return Promise.resolve(); // Don't reject, just skip adding the banner
       }
     } else {
-      console.error("Not in compose mode or not a message item.");
-      return Promise.reject("Invalid context.");
+      console.error("Not a message item.");
+      return Promise.reject("Invalid context - not a message item.");
     }
   };
 
@@ -273,6 +285,28 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     setSendCopyToCyberAdmin(!!checked);
   };
 
+  const validateEmailFiles = async (item: any): Promise<boolean> => {
+    try {
+      setIsValidatingFiles(true);
+      const validationResult = await FileValidationService.validateEmailAttachments(item);
+      setFileValidationResult(validationResult);
+      return validationResult.isValid;
+    } catch (error) {
+      DebugService.error('File validation failed:', error);
+      setFileValidationResult({
+        isValid: false,
+        errors: [{
+          type: 'unsupported',
+          message: 'Unable to validate attachments. Please check file types and try again.',
+          files: []
+        }]
+      });
+      return false;
+    } finally {
+      setIsValidatingFiles(false);
+    }
+  };
+
   const handleSubmit = async () => {
     setShowLoadingMessage(true);
     try {
@@ -308,6 +342,13 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
           setShowFailureMessage(true);
           return;
         }
+      }
+
+      // Validate files before proceeding
+      const filesValid = await validateEmailFiles(item);
+      if (!filesValid) {
+        setShowLoadingMessage(false);
+        return;
       }
 
       const isDuplicate = await checkDuplicateSubmission(item, DebugService);
@@ -436,7 +477,23 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     }
   };
 
-  const handleLandingSave = () => {
+  const handleLandingSave = async () => {
+    DebugService.debug('handleLandingSave called - starting file validation');
+    
+    // Validate email attachments when user clicks "New Placement"
+    try {
+      const item = Office.context.mailbox.item;
+      if (item) {
+        DebugService.debug('Office item found, calling validateEmailFiles');
+        await validateEmailFiles(item);
+        DebugService.debug('File validation completed in handleLandingSave');
+      } else {
+        DebugService.warn('No Office item found in handleLandingSave');
+      }
+    } catch (error) {
+      DebugService.error('File validation failed in handleLandingSave:', error);
+    }
+    
     setShowLanding(false);
     setShowBUProducts(true);
   };
@@ -537,6 +594,8 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
               onSubmit={handleSubmit}
               emailSubject={emailSubject}
               isDraftEmail={isDraftEmail}
+              fileValidationError={FileValidationService.getPrimaryErrorMessage(fileValidationResult.errors)}
+              isSubmitDisabled={!fileValidationResult.isValid || isValidatingFiles}
             />
           )}
           <ConfirmationDialog

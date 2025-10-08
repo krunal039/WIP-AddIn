@@ -5,7 +5,7 @@ import { EmailConverterService } from './EmailConverterService';
 import GraphEmailService from './GraphEmailService';
 import OfficeModeService from './OfficeModeService';
 import OfficeIdConverterService from './OfficeIdConverterService';
-import { getSender, getSubject, getCreatedDate } from '../utils/emailHelpers';
+import { getSender, getSubject, getCreatedDate, detectSharedMailbox } from '../utils/emailHelpers';
 import { stampEmailWithWorkbenchId } from '../utils/emailStamping';
 import { showWorkbenchNotificationBanner } from '../utils/outlookNotification';
 
@@ -111,18 +111,26 @@ export class WorkbenchService {
           } else {
             // Final fallback: search by subject and createdDate
             DebugService.debug('Using search fallback for retry with subject and createdDate');
-            const emailSubject = await getSubject(item as any);
-            const emailSender = await getSender(item as any);
-            const emailCreatedDateTime = await getCreatedDate(item as any);
-            
-            await GraphEmailService.forwardEmailBySearchFallback(
-              graphToken,
-              emailSubject,
-              emailSender,
-              emailCreatedDateTime,
-              placementId,
-              sharedMailbox
-            );
+            try {
+              const emailSubject = await getSubject(item as any);
+              const emailSender = await getSender(item as any);
+              const emailCreatedDateTime = await getCreatedDate(item as any);
+              
+              DebugService.debug('Search fallback parameters:', { emailSubject, emailSender, emailCreatedDateTime });
+              
+              await GraphEmailService.forwardEmailBySearchFallback(
+                graphToken,
+                emailSubject,
+                emailSender,
+                emailCreatedDateTime,
+                placementId,
+                sharedMailbox
+              );
+            } catch (error) {
+              DebugService.error('Search fallback failed:', error);
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              throw new Error(`Search fallback failed: ${errorMessage}`);
+            }
           }
         }
       }
@@ -257,11 +265,22 @@ export class WorkbenchService {
     const emailSubject = await getSubject(item as any);
     const emailReceivedDateTime = await getCreatedDate(item as any);
 
+    // Ensure all values are strings to prevent .replace() errors
+    const validatedEmailSender = String(emailSender || '');
+    const validatedEmailSubject = String(emailSubject || '');
+    const validatedEmailReceivedDateTime = String(emailReceivedDateTime || new Date().toISOString());
+
+    DebugService.debug('Validated email data:', {
+      emailSender: validatedEmailSender,
+      emailSubject: validatedEmailSubject,
+      emailReceivedDateTime: validatedEmailReceivedDateTime
+    });
+
     const data: PlacementRequestData = {
       productCode,
-      emailSender,
-      emailSubject,
-      emailReceivedDateTime,
+      emailSender: validatedEmailSender,
+      emailSubject: validatedEmailSubject,
+      emailReceivedDateTime: validatedEmailReceivedDateTime,
       emlContent: emlData.content,
     };
 
@@ -308,6 +327,10 @@ export class WorkbenchService {
       try {
         DebugService.email('Forwarding email using Graph token');
         
+        // Detect if the current email is from a shared mailbox
+        const { isShared, mailboxEmail } = await detectSharedMailbox(item as any);
+        DebugService.debug(`Detected mailbox type - isShared: ${isShared}, mailboxEmail: ${mailboxEmail}`);
+        
         // We should now have a valid itemId for all cases
         if (currentItemId) {
           // Get internetMessageId for better fallback handling
@@ -319,7 +342,7 @@ export class WorkbenchService {
             uwwbID: placementData.placementId,
             sharedMailbox: this.sharedMailbox,
             internetMessageId: internetMessageId || undefined,
-          });
+          }, mailboxEmail, isShared);
         } else {
           // Fallback: if somehow we still don't have itemId, try conversationId
           const conversationId = (item as any).conversationId;
@@ -338,18 +361,26 @@ export class WorkbenchService {
           } else {
             // Final fallback: search by subject and createdDate
             DebugService.debug('Using search fallback with subject and createdDate');
-            const emailSubject = await getSubject(item as any);
-            const emailSender = await getSender(item as any);
-            const emailCreatedDateTime = await getCreatedDate(item as any);
-            
-            await GraphEmailService.forwardEmailBySearchFallback(
-              graphToken,
-              emailSubject,
-              emailSender,
-              emailCreatedDateTime,
-              placementData.placementId,
-              this.sharedMailbox
-            );
+            try {
+              const emailSubject = await getSubject(item as any);
+              const emailSender = await getSender(item as any);
+              const emailCreatedDateTime = await getCreatedDate(item as any);
+              
+              DebugService.debug('Search fallback parameters:', { emailSubject, emailSender, emailCreatedDateTime });
+              
+              await GraphEmailService.forwardEmailBySearchFallback(
+                graphToken,
+                emailSubject,
+                emailSender,
+                emailCreatedDateTime,
+                placementData.placementId,
+                this.sharedMailbox
+              );
+            } catch (error) {
+              DebugService.error('Search fallback failed:', error);
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              throw new Error(`Search fallback failed: ${errorMessage}`);
+            }
           }
         }
         
