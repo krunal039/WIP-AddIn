@@ -487,6 +487,27 @@ class FileValidationService {
   }
 
   /**
+   * Get all error messages combined for display to user
+   * This shows all validation errors at once instead of one at a time
+   */
+  public getAllErrorMessages(errors: FileValidationError[]): string | null {
+    if (errors.length === 0) return null;
+    
+    if (errors.length === 1) {
+      return errors[0].message;
+    }
+    
+    // Combine all error messages with file lists
+    const errorMessages = errors.map(error => {
+      const fileList = error.files.length > 0 ? ` (${error.files.join(', ')})` : '';
+      return `${error.message}${fileList}`;
+    });
+    
+    // Join with line breaks for better readability
+    return errorMessages.join('\n');
+  }
+
+  /**
    * Get detailed error information for debugging
    * This helps understand what types of files were detected as problematic
    */

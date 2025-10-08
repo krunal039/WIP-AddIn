@@ -594,7 +594,7 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
               onSubmit={handleSubmit}
               emailSubject={emailSubject}
               isDraftEmail={isDraftEmail}
-              fileValidationError={FileValidationService.getPrimaryErrorMessage(fileValidationResult.errors)}
+              fileValidationError={FileValidationService.getAllErrorMessages(fileValidationResult.errors)}
               isSubmitDisabled={!fileValidationResult.isValid || isValidatingFiles}
             />
           )}

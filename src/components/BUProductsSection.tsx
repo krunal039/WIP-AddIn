@@ -63,7 +63,7 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = ({
           <div className="ms-Grid-col ms-sm12">
             <MessageBar
               messageBarType={MessageBarType.error}
-              isMultiline={false}
+              isMultiline={true}
               styles={{
                 root: {
                   backgroundColor: '#fdf2f2',
@@ -72,7 +72,7 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = ({
                 },
                 content: {
                   display: 'flex',
-                  alignItems: 'center',
+                  alignItems: 'flex-start',
                 },
                 icon: {
                   color: '#d13438',
@@ -83,7 +83,11 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = ({
                 }
               }}
             >
-              {fileValidationError}
+              {fileValidationError?.split('\n').map((line, index) => (
+                <div key={index} style={{ marginBottom: index > 0 ? '4px' : '0' }}>
+                  {line}
+                </div>
+              ))}
             </MessageBar>
           </div>
         </div>
