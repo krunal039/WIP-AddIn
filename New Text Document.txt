@@ -26,3 +26,8 @@ When the Underwriter has selected "New Placement"
 And one or more files is password protected
 Then the error message is shown to the user until the unsupported file(s) are removed
 And the submit button is disabled until the password protected file(s) are removed
+
+
+One or multiple .zip files attached. Please remove all .zip file(s) to submit. (Beezy.21-05-2025.zip)
+One or more unsupported file types attached. Please remove unsupported file(s) to submit. (Beezy.21-05-2025.zip)
+One or more files is password protected. Please remove password protected file(s) to submit. (sampleunsecuredpdf-protected.pdf)
