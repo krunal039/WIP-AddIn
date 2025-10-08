@@ -497,14 +497,54 @@ class FileValidationService {
       return errors[0].message;
     }
     
-    // Combine all error messages with file lists
-    const errorMessages = errors.map(error => {
-      const fileList = error.files.length > 0 ? ` (${error.files.join(', ')})` : '';
-      return `${error.message}${fileList}`;
+    // Create structured error message with bullet points
+    const errorMessages: string[] = [];
+    
+    // Add main error message
+    errorMessages.push('One or more file validation errors found. Please remove the following files to submit:');
+    
+    // Track files that have already been shown to avoid duplicates
+    const shownFiles = new Set<string>();
+    
+    // Priority order: zip > unsupported > encrypted > password protected
+    const priorityOrder = ['zip', 'unsupported', 'encrypted', 'password_protected'];
+    
+    // Add specific file details for each error type in priority order
+    priorityOrder.forEach(errorType => {
+      const error = errors.find(e => e.type === errorType);
+      if (error && error.files.length > 0) {
+        // Filter out files that have already been shown
+        const newFiles = error.files.filter(file => !shownFiles.has(file));
+        if (newFiles.length > 0) {
+          const errorTypeLabel = this.getErrorTypeLabel(error.type);
+          const fileList = newFiles.join(', ');
+          errorMessages.push(`• ${errorTypeLabel}: ${fileList}`);
+          
+          // Mark these files as shown
+          newFiles.forEach(file => shownFiles.add(file));
+        }
+      }
     });
     
-    // Join with line breaks for better readability
     return errorMessages.join('\n');
+  }
+
+  /**
+   * Get user-friendly label for error type
+   */
+  private getErrorTypeLabel(errorType: string): string {
+    switch (errorType) {
+      case 'zip':
+        return 'Zip/Compressed files';
+      case 'unsupported':
+        return 'Unsupported file types';
+      case 'encrypted':
+        return 'Encrypted files';
+      case 'password_protected':
+        return 'Password protected files';
+      default:
+        return 'Invalid files';
+    }
   }
 
   /**

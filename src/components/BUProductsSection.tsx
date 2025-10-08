@@ -83,11 +83,30 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = ({
                 }
               }}
             >
-              {fileValidationError?.split('\n').map((line, index) => (
-                <div key={index} style={{ marginBottom: index > 0 ? '4px' : '0' }}>
-                  {line}
-                </div>
-              ))}
+              {fileValidationError?.split('\n').map((line, index) => {
+                // Style the main message differently
+                if (index === 0) {
+                  return (
+                    <div key={index} style={{ 
+                      marginBottom: '8px', 
+                      fontWeight: '600',
+                      fontSize: '14px'
+                    }}>
+                      {line}
+                    </div>
+                  );
+                }
+                // Style bullet points
+                return (
+                  <div key={index} style={{ 
+                    marginLeft: '16px', 
+                    marginBottom: '4px',
+                    fontSize: '13px'
+                  }}>
+                    {line}
+                  </div>
+                );
+              })}
             </MessageBar>
           </div>
         </div>
