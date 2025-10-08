@@ -280,10 +280,11 @@ class FileValidationService {
     // 3. Filename patterns that suggest encryption
     
     // Check for very small files that might be encrypted metadata
+    // Only flag if it's explicitly encrypted or has suspicious patterns
     if (attachment.size < 1000 && (
-        contentType === 'application/octet-stream' ||
-        contentType === 'text/plain' ||
-        filename.endsWith('.encrypted')
+        filename.endsWith('.encrypted') ||
+        filename.includes('encrypted') ||
+        contentType === 'application/x-microsoft-encrypted'
     )) {
       return true;
     }
@@ -332,7 +333,11 @@ class FileValidationService {
     }
     
     // Check for suspiciously small Office files (might be encrypted/compressed)
-    if (attachment.size < 5000 && isOfficeFile) {
+    // Only flag if it's extremely small AND has suspicious content type
+    if (attachment.size < 1000 && isOfficeFile && (
+        contentType === 'application/octet-stream' ||
+        contentType.includes('encrypted')
+    )) {
       return true;
     }
     
@@ -412,16 +417,21 @@ class FileValidationService {
     }
     
     // Check for suspiciously small Office files (might be password-protected)
-    // Normal Office files are usually larger than 5KB
-    if (attachment.size < 5000 && isOfficeFile) {
+    // Only flag if it's extremely small AND has suspicious content type
+    if (attachment.size < 1000 && isOfficeFile && (
+        contentType === 'application/octet-stream' ||
+        contentType.includes('encrypted') ||
+        contentType.includes('password')
+    )) {
       return true;
     }
     
-    // Check for Office files with unusual content types
+    // Check for Office files with unusual content types that suggest password protection
     if (isOfficeFile && (
-        contentType === 'application/octet-stream' ||
-        contentType === 'text/plain' ||
-        contentType.includes('encrypted')
+        contentType === 'application/x-microsoft-office-encrypted' ||
+        contentType === 'application/x-password-protected' ||
+        contentType.includes('encrypted') ||
+        contentType.includes('password')
     )) {
       return true;
     }
@@ -452,15 +462,20 @@ class FileValidationService {
     }
     
     // Check for suspiciously small PDF files (might be password-protected)
-    // Normal PDFs are usually larger than 2KB
-    if (attachment.size < 2000) {
+    // Only flag if it's extremely small AND has suspicious content type
+    if (attachment.size < 500 && (
+        contentType === 'application/octet-stream' ||
+        contentType.includes('encrypted') ||
+        contentType.includes('password')
+    )) {
       return true;
     }
     
-    // Check for PDFs with unusual content types
-    if (contentType === 'application/octet-stream' ||
-        contentType === 'text/plain' ||
-        contentType.includes('encrypted')) {
+    // Check for PDFs with unusual content types that suggest password protection
+    if (contentType === 'application/x-password-protected' ||
+        contentType === 'application/pdf-encrypted' ||
+        contentType.includes('encrypted') ||
+        contentType.includes('password')) {
       return true;
     }
     
