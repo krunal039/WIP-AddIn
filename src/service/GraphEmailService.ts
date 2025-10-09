@@ -151,9 +151,11 @@ class GraphEmailService {
       }
 
       // Step 3: Create draft
-      // Use the correct endpoint for the target mailbox (where we're sending to)
-      const targetMailboxEndpoint = this.getMailboxEndpoint(data.sharedMailbox, true); // Always shared for target
-      const draftUrl = `${targetMailboxEndpoint}/messages`;
+      // Create the draft in the current user's mailbox (not the shared mailbox)
+      // The shared mailbox will be the recipient, not the sender
+      const currentUserEndpoint = 'https://graph.microsoft.com/v1.0/me';
+      const draftUrl = `${currentUserEndpoint}/messages`;
+      DebugService.debug(`Creating draft in current user's mailbox to send TO shared mailbox: ${data.sharedMailbox}`);
       DebugService.api('POST', draftUrl);
       DebugService.object('Draft body', draftBody);
 
@@ -181,8 +183,8 @@ class GraphEmailService {
       }
 
       // Step 4: Send the draft
-      DebugService.debug('Step 3: Sending draft...');
-      const sendUrl = `${targetMailboxEndpoint}/messages/${draft.id}/send`;
+      DebugService.debug(`Sending draft FROM current user's mailbox TO shared mailbox: ${data.sharedMailbox}`);
+      const sendUrl = `${currentUserEndpoint}/messages/${draft.id}/send`;
       DebugService.api('POST', sendUrl);
 
       const sendRes = await fetch(sendUrl, {
