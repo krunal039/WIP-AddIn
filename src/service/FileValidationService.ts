@@ -1,4 +1,5 @@
 import DebugService from './DebugService';
+import { detectFileProtectionFromBase64, isSupportedFileType } from '../utils/fileInspector';
 
 /**
  * FileValidationService - Validates email attachments for various restrictions
@@ -147,25 +148,24 @@ class FileValidationService {
   }
 
   /**
-   * Get email attachments from Office.js item
+   * Get email attachments from Office.js item with file content for analysis
    */
-  private async getEmailAttachments(item: any): Promise<Array<{name: string, size: number, contentType: string}>> {
+  private async getEmailAttachments(item: any): Promise<Array<{name: string, size: number, contentType: string, content?: string}>> {
     return new Promise((resolve) => {
       try {
-        DebugService.debug('Getting email attachments, item type:', item.itemType);
+        DebugService.debug('Getting email attachments with content, item type:', item.itemType);
         
         // For compose mode, try to get attachments
         if (item.attachments && typeof item.attachments.getAsync === 'function') {
           DebugService.debug('Using compose mode attachment access');
-          item.attachments.getAsync((result: any) => {
+          item.attachments.getAsync(async (result: any) => {
             if (result.status === Office.AsyncResultStatus.Succeeded) {
               const attachments = result.value || [];
               DebugService.debug(`Compose mode: Found ${attachments.length} attachments`);
-              resolve(attachments.map((att: any) => ({
-                name: att.name || 'Unknown',
-                size: att.size || 0,
-                contentType: att.contentType || 'application/octet-stream'
-              })));
+              
+              // Get attachment content for password protection detection
+              const attachmentsWithContent = await this.getAttachmentContent(item, attachments);
+              resolve(attachmentsWithContent);
             } else {
               DebugService.warn('Failed to get attachments in compose mode:', result.error);
               resolve([]);
@@ -176,11 +176,9 @@ class FileValidationService {
           DebugService.debug('Using read mode attachment access');
           if (item.attachments && Array.isArray(item.attachments)) {
             DebugService.debug(`Read mode: Found ${item.attachments.length} attachments directly`);
-            resolve(item.attachments.map((att: any) => ({
-              name: att.name || 'Unknown',
-              size: att.size || 0,
-              contentType: att.contentType || 'application/octet-stream'
-            })));
+            
+            // Get attachment content for password protection detection
+            this.getAttachmentContent(item, item.attachments).then(resolve);
           } else {
             DebugService.warn('No attachments found in read mode');
             resolve([]);
@@ -194,6 +192,60 @@ class FileValidationService {
         resolve([]);
       }
     });
+  }
+
+  /**
+   * Get attachment content for password protection detection
+   */
+  private async getAttachmentContent(item: any, attachments: any[]): Promise<Array<{name: string, size: number, contentType: string, content?: string}>> {
+    const attachmentsWithContent: Array<{name: string, size: number, contentType: string, content?: string}> = [];
+    
+    for (const attachment of attachments) {
+      const attachmentData = {
+        name: attachment.name || 'Unknown',
+        size: attachment.size || 0,
+        contentType: attachment.contentType || 'application/octet-stream',
+        content: undefined as string | undefined
+      };
+      
+      // Try to get attachment content for password protection detection
+      DebugService.debug(`Attempting to get content for attachment: ${attachment.name}, ID: ${attachment.id}`);
+      
+      if (typeof item.getAttachmentContentAsync === 'function' && attachment.id) {
+        try {
+          DebugService.debug(`Calling getAttachmentContentAsync for: ${attachment.name}`);
+          const contentResult = await new Promise<Office.AsyncResult<Office.AttachmentContent>>((resolve) => {
+            item.getAttachmentContentAsync(
+              attachment.id,
+              { asyncContext: attachment.id },
+              (result: Office.AsyncResult<Office.AttachmentContent>) => {
+                DebugService.debug(`getAttachmentContentAsync callback for ${attachment.name}:`, result.status);
+                resolve(result);
+              }
+            );
+          });
+          
+          if (contentResult.status === Office.AsyncResultStatus.Succeeded && contentResult.value) {
+            if (contentResult.value.format === Office.MailboxEnums.AttachmentContentFormat.Base64) {
+              attachmentData.content = contentResult.value.content;
+              DebugService.debug(`Retrieved content for attachment: ${attachment.name} (${contentResult.value.content.length} chars)`);
+            } else {
+              DebugService.debug(`Attachment ${attachment.name} content format not supported: ${contentResult.value.format}`);
+            }
+          } else {
+            DebugService.warn(`Failed to get content for attachment ${attachment.name}:`, contentResult.error);
+          }
+        } catch (error) {
+          DebugService.warn(`Error getting content for attachment ${attachment.name}:`, error);
+        }
+      } else {
+        DebugService.debug(`Cannot get content for attachment ${attachment.name} - getAttachmentContentAsync: ${typeof item.getAttachmentContentAsync === 'function'}, attachment.id: ${attachment.id}`);
+      }
+      
+      attachmentsWithContent.push(attachmentData);
+    }
+    
+    return attachmentsWithContent;
   }
 
   /**
@@ -223,7 +275,7 @@ class FileValidationService {
   /**
    * Detect encrypted files including M365 encryption and common encryption patterns
    */
-  private async detectEncryptedFiles(attachments: Array<{name: string, size: number, contentType: string}>): Promise<string[]> {
+  private async detectEncryptedFiles(attachments: Array<{name: string, size: number, contentType: string, content?: string}>): Promise<string[]> {
     const encryptedFiles: string[] = [];
     
     for (const attachment of attachments) {
@@ -270,37 +322,23 @@ class FileValidationService {
    * Check if file appears to be M365 encrypted
    * M365 encryption is complex and may not always be detectable via simple patterns
    */
-  private isM365EncryptedFile(attachment: {name: string, size: number, contentType: string}): boolean {
+  private isM365EncryptedFile(attachment: {name: string, size: number, contentType: string, content?: string}): boolean {
     const filename = attachment.name.toLowerCase();
     const contentType = attachment.contentType.toLowerCase();
     
-    // M365 encrypted files might have these characteristics:
-    // 1. Very small file size (encrypted metadata)
-    // 2. Specific content types that indicate encryption
-    // 3. Filename patterns that suggest encryption
-    
-    // Check for very small files that might be encrypted metadata
-    // Only flag if it's explicitly encrypted or has suspicious patterns
-    if (attachment.size < 1000 && (
-        filename.endsWith('.encrypted') ||
-        filename.includes('encrypted') ||
-        contentType === 'application/x-microsoft-encrypted'
-    )) {
-      return true;
-    }
-    
+    // Only check for explicit M365 encryption indicators to avoid false positives
     // Check for M365-specific encrypted content types
-    if (contentType.includes('encrypted') || 
-        contentType.includes('cipher') ||
-        contentType === 'application/x-microsoft-encrypted') {
+    if (contentType === 'application/x-microsoft-encrypted' ||
+        contentType === 'application/x-microsoft-office-encrypted') {
       return true;
     }
     
-    // Check for files that might be M365 encrypted based on naming patterns
-    if (filename.includes('encrypted') || 
-        filename.includes('cipher') ||
-        filename.match(/^[a-f0-9]{32,}\./) || // Hex-like filenames
-        filename.includes('_enc_')) {
+    // Check for files with explicit encryption indicators in filename
+    if (filename.includes('encrypted') && (
+        filename.endsWith('.encrypted') ||
+        filename.includes('_encrypted') ||
+        filename.includes('_enc_')
+    )) {
       return true;
     }
     
@@ -310,7 +348,7 @@ class FileValidationService {
   /**
    * Check if Office document appears to be encrypted (password-protected)
    */
-  private isOfficeEncryptedFile(attachment: {name: string, size: number, contentType: string}): boolean {
+  private isOfficeEncryptedFile(attachment: {name: string, size: number, contentType: string, content?: string}): boolean {
     const filename = attachment.name.toLowerCase();
     const contentType = attachment.contentType.toLowerCase();
     
@@ -320,24 +358,9 @@ class FileValidationService {
     
     if (!isOfficeFile) return false;
     
-    // Password-protected Office files often have these characteristics:
-    // 1. Smaller than expected size for the content
-    // 2. Specific content types that indicate encryption
-    // 3. Filename patterns
-    
     // Check for encrypted Office content types
     if (contentType === 'application/x-microsoft-office-encrypted' ||
-        contentType === 'application/x-password-protected' ||
-        contentType.includes('encrypted')) {
-      return true;
-    }
-    
-    // Check for suspiciously small Office files (might be encrypted/compressed)
-    // Only flag if it's extremely small AND has suspicious content type
-    if (attachment.size < 1000 && isOfficeFile && (
-        contentType === 'application/octet-stream' ||
-        contentType.includes('encrypted')
-    )) {
+        contentType === 'application/x-password-protected') {
       return true;
     }
     
@@ -346,14 +369,43 @@ class FileValidationService {
 
   /**
    * Detect password protected files including Office documents (PDF, Excel, Word, PowerPoint)
+   * Now uses file content analysis for more accurate detection
    */
-  private async detectPasswordProtectedFiles(attachments: Array<{name: string, size: number, contentType: string}>): Promise<string[]> {
+  private async detectPasswordProtectedFiles(attachments: Array<{name: string, size: number, contentType: string, content?: string}>): Promise<string[]> {
     const passwordProtectedFiles: string[] = [];
     
     for (const attachment of attachments) {
       const filename = attachment.name.toLowerCase();
       const contentType = attachment.contentType.toLowerCase();
       
+      // First, try content-based detection if content is available
+      DebugService.debug(`Processing attachment: ${attachment.name}, has content: ${!!attachment.content}, supported: ${isSupportedFileType(attachment.name)}`);
+      
+      if (attachment.content && isSupportedFileType(attachment.name)) {
+        try {
+          DebugService.debug(`Starting comprehensive content analysis for: ${attachment.name}`);
+          DebugService.debug(`Content length: ${attachment.content.length} characters`);
+          DebugService.debug(`Content preview: ${attachment.content.substring(0, 50)}...`);
+          
+          const result = await detectFileProtectionFromBase64(attachment.content);
+          
+          DebugService.debug(`Analysis result for ${attachment.name}:`, result);
+          
+          if (result.encrypted) {
+            passwordProtectedFiles.push(attachment.name);
+            DebugService.debug(`Comprehensive analysis detected password protection: ${attachment.name} - ${result.details.join(', ')}`);
+            continue;
+          } else {
+            DebugService.debug(`Comprehensive analysis found no password protection: ${attachment.name}`);
+          }
+        } catch (error) {
+          DebugService.warn(`Error in comprehensive analysis for password protection: ${attachment.name}`, error);
+        }
+      } else {
+        DebugService.debug(`Skipping comprehensive analysis for ${attachment.name} - content: ${!!attachment.content}, supported: ${isSupportedFileType(attachment.name)}`);
+      }
+      
+      // Fallback to filename and content type based detection
       // Check for explicit password protection indicators in filename
       if (filename.includes('password') ||
           filename.includes('protected') ||
@@ -363,6 +415,7 @@ class FileValidationService {
           filename.includes('_pw_') ||
           filename.includes('_pass_')) {
         passwordProtectedFiles.push(attachment.name);
+        DebugService.debug(`Filename analysis detected password protection: ${attachment.name}`);
         continue;
       }
       
@@ -372,28 +425,32 @@ class FileValidationService {
           contentType.includes('password') ||
           contentType.includes('protected')) {
         passwordProtectedFiles.push(attachment.name);
+        DebugService.debug(`Content type analysis detected password protection: ${attachment.name}`);
         continue;
       }
       
-      // Check for Office documents that might be password-protected
+      // Check for Office documents that might be password-protected (fallback)
       if (this.isOfficePasswordProtectedFile(attachment)) {
         passwordProtectedFiles.push(attachment.name);
+        DebugService.debug(`Office file analysis detected password protection: ${attachment.name}`);
         continue;
       }
       
-      // Check for PDF files that might be password-protected
+      // Check for PDF files that might be password-protected (fallback)
       if (this.isPasswordProtectedPDF(attachment)) {
         passwordProtectedFiles.push(attachment.name);
+        DebugService.debug(`PDF analysis detected password protection: ${attachment.name}`);
       }
     }
     
+    DebugService.debug(`Password protection detection completed. Found ${passwordProtectedFiles.length} protected files:`, passwordProtectedFiles);
     return passwordProtectedFiles;
   }
 
   /**
    * Check if Office document (Word, Excel, PowerPoint) appears to be password-protected
    */
-  private isOfficePasswordProtectedFile(attachment: {name: string, size: number, contentType: string}): boolean {
+  private isOfficePasswordProtectedFile(attachment: {name: string, size: number, contentType: string, content?: string}): boolean {
     const filename = attachment.name.toLowerCase();
     const contentType = attachment.contentType.toLowerCase();
     
@@ -403,36 +460,9 @@ class FileValidationService {
     
     if (!isOfficeFile) return false;
     
-    // Password-protected Office files often have these characteristics:
-    // 1. Smaller file size than expected (due to encryption)
-    // 2. Specific content types
-    // 3. Unusual file structure patterns
-    
     // Check for encrypted Office content types
     if (contentType === 'application/x-microsoft-office-encrypted' ||
-        contentType === 'application/x-password-protected' ||
-        contentType.includes('encrypted') ||
-        contentType.includes('password')) {
-      return true;
-    }
-    
-    // Check for suspiciously small Office files (might be password-protected)
-    // Only flag if it's extremely small AND has suspicious content type
-    if (attachment.size < 1000 && isOfficeFile && (
-        contentType === 'application/octet-stream' ||
-        contentType.includes('encrypted') ||
-        contentType.includes('password')
-    )) {
-      return true;
-    }
-    
-    // Check for Office files with unusual content types that suggest password protection
-    if (isOfficeFile && (
-        contentType === 'application/x-microsoft-office-encrypted' ||
-        contentType === 'application/x-password-protected' ||
-        contentType.includes('encrypted') ||
-        contentType.includes('password')
-    )) {
+        contentType === 'application/x-password-protected') {
       return true;
     }
     
@@ -442,40 +472,15 @@ class FileValidationService {
   /**
    * Check if PDF file appears to be password-protected
    */
-  private isPasswordProtectedPDF(attachment: {name: string, size: number, contentType: string}): boolean {
+  private isPasswordProtectedPDF(attachment: {name: string, size: number, contentType: string, content?: string}): boolean {
     const filename = attachment.name.toLowerCase();
     const contentType = attachment.contentType.toLowerCase();
     
     if (!filename.endsWith('.pdf')) return false;
     
-    // Password-protected PDFs often have these characteristics:
-    // 1. Smaller file size than expected
-    // 2. Specific content types
-    // 3. Unusual file structure
-    
     // Check for encrypted PDF content types
     if (contentType === 'application/x-password-protected' ||
-        contentType === 'application/pdf-encrypted' ||
-        contentType.includes('encrypted') ||
-        contentType.includes('password')) {
-      return true;
-    }
-    
-    // Check for suspiciously small PDF files (might be password-protected)
-    // Only flag if it's extremely small AND has suspicious content type
-    if (attachment.size < 500 && (
-        contentType === 'application/octet-stream' ||
-        contentType.includes('encrypted') ||
-        contentType.includes('password')
-    )) {
-      return true;
-    }
-    
-    // Check for PDFs with unusual content types that suggest password protection
-    if (contentType === 'application/x-password-protected' ||
-        contentType === 'application/pdf-encrypted' ||
-        contentType.includes('encrypted') ||
-        contentType.includes('password')) {
+        contentType === 'application/pdf-encrypted') {
       return true;
     }
     
@@ -508,15 +513,11 @@ class FileValidationService {
   public getAllErrorMessages(errors: FileValidationError[]): string | null {
     if (errors.length === 0) return null;
     
-    if (errors.length === 1) {
-      return errors[0].message;
-    }
-    
-    // Create structured error message with bullet points
+    // Always use the structured format, even for single errors
     const errorMessages: string[] = [];
     
     // Add main error message
-    errorMessages.push('One or more file validation errors found. Please remove the following files to submit:');
+    errorMessages.push('There\'s one or more unsupported file types attached.');
     
     // Track files that have already been shown to avoid duplicates
     const shownFiles = new Set<string>();
@@ -550,15 +551,15 @@ class FileValidationService {
   private getErrorTypeLabel(errorType: string): string {
     switch (errorType) {
       case 'zip':
-        return 'Zip/Compressed files';
+        return 'Zip files';
       case 'unsupported':
-        return 'Unsupported file types';
+        return 'Unsupported file';
       case 'encrypted':
-        return 'Encrypted files';
+        return 'Encrypted file';
       case 'password_protected':
-        return 'Password protected files';
+        return 'Password protected file';
       default:
-        return 'Invalid files';
+        return 'Invalid file';
     }
   }
 
