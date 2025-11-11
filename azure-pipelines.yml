@@ -50,8 +50,41 @@ parameters:
         keyVault:
           kvName: "kv-gsi-uwb-op-qa-weu"
           resourceGroupName: "rg-gsi-uwb-outlook-plugin-qa-weu"
-        azureResourceManagerServiceConnection: "GSI4-UWB-PP-DevOps-NonProd"        
-
+        azureResourceManagerServiceConnection: "GSI4-UWB-PP-DevOps-NonProd" 
+      - name: "uat-weu"
+        agentPool: "Azure Pipelines"
+        adoLibrary: "uwb-outlook-plugin-uat"
+        adoEnvironment: "OC-GSI-UWB-UAT"
+        staticWebApp:
+          name: "swa-gsi-email-ingestion-request-uat-weu"
+          resourceGroup: "rg-gsi-uwb-outlook-plugin-uat-weu"
+        keyVault:
+          kvName: "kv-gsi-uwb-op-uat-weu"
+          resourceGroupName: "rg-gsi-uwb-outlook-plugin-uat-weu"
+        azureResourceManagerServiceConnection: "GSI4-UWB-PP-DevOps-NonProd"               
+      - name: "PROD-weu"
+        agentPool: "Azure Pipelines"
+        adoLibrary: "uwb-outlook-plugin-PROD"
+        adoEnvironment: "OC-GSI-UWB-PROD"
+        staticWebApp:
+          name: "swa-gsi-email-ingestion-request-prod-weu"
+          resourceGroup: "rg-gsi-uwb-outlook-plugin-prod-weu"
+        keyVault:
+          kvName: "kv-gsi-uwb-op-weu"
+          resourceGroupName: "rg-gsi-uwb-outlook-plugin-prod-weu"
+        azureResourceManagerServiceConnection: "OC-GSI-UWB-PP-PROD-Code-Deploy"               
+      - name: "DR-neu"
+        agentPool: "Azure Pipelines"
+        adoLibrary: "uwb-outlook-plugin-PROD"
+        adoEnvironment: "OC-GSI-UWB-PROD"
+        staticWebApp:
+          name: "swa-gsi-email-ingestion-request-prod-dr-neu"
+          resourceGroup: "rg-gsi-uwb-outlook-plugin-dr-neu"
+        keyVault:
+          kvName: "kv-gsi-uwb-op-weu"
+          resourceGroupName: "rg-gsi-uwb-outlook-plugin-prod-weu"
+        azureResourceManagerServiceConnection: "OC-GSI-UWB-PP-PROD-Code-Deploy"               
+              
 stages:
   - template: "npm-ci.yml@templates"
     parameters:

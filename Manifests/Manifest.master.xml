@@ -2,14 +2,14 @@
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
   xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0" xsi:type="MailApp">
-  <Id>8bdcf796-7f7f-4371-9c45-d8113b8063d4</Id>
+  <Id>1e7e38da-7ad6-429a-9c6f-81aa1b9c9344</Id>
   <Version>1.0.0.0</Version>
   <ProviderName>MunichRe</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="UWWB - QA" />
+  <DisplayName DefaultValue="UWWB - UAT" />
   <Description DefaultValue="UWWB - MunichRe Outlook Add-in." />
-  <IconUrl DefaultValue="https://gsi-email-ingestion-request-qa.munichre.com/assets/icon-80.png" />
-  <HighResolutionIconUrl DefaultValue="https://gsi-email-ingestion-request-qa.munichre.com/assets/icon-80.png" />
+  <IconUrl DefaultValue="https://gsi-email-ingestion-request-uat.munichre.com/assets/icon-80.png" />
+  <HighResolutionIconUrl DefaultValue="https://gsi-email-ingestion-request-uat.munichre.com/assets/icon-80.png" />
   <SupportUrl DefaultValue="https://www.MunichRe.com" />
   <AppDomains>
     <AppDomain>https://www.MunichRe.com</AppDomain>
@@ -34,7 +34,7 @@
   <FormSettings>
     <Form xsi:type="ItemRead">
       <DesktopSettings>
-        <SourceLocation DefaultValue="https://gsi-email-ingestion-request-qa.munichre.com/index.html" />
+        <SourceLocation DefaultValue="https://gsi-email-ingestion-request-uat.munichre.com/index.html" />
         <RequestedHeight>250</RequestedHeight>
       </DesktopSettings>
     </Form>
@@ -60,7 +60,29 @@
 
           <!-- Message Compose -->
 
-          
+          <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+            <OfficeTab id="TabMessage">
+              <Group id="msgComposeCmdGroup_compose">
+                <Label resid="CommandsGroup.Label" />
+                <Control xsi:type="Button" id="msgInsertGist_compose">
+                  <Label resid="TaskpaneButton.Label" />
+                  <Supertip>
+                    <Title resid="TaskpaneButton.SupertipTitle" />
+                    <Description resid="TaskpaneButton.SupertipText" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16" />
+                    <bt:Image size="32" resid="Icon.32x32" />
+                    <bt:Image size="80" resid="Icon.80x80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="Taskpane.Url" />
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+
           <ExtensionPoint xsi:type="MessageReadCommandSurface">
             <OfficeTab id="TabDefault">
               <Group id="msgComposeCmdGroup_read">
@@ -88,15 +110,15 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://gsi-email-ingestion-request-qa.munichre.com/assets/icon-16.png" />
-        <bt:Image id="Icon.32x32" DefaultValue="https://gsi-email-ingestion-request-qa.munichre.com/assets/icon-32.png" />
-        <bt:Image id="Icon.80x80" DefaultValue="https://gsi-email-ingestion-request-qa.munichre.com/assets/icon-80.png" />
+        <bt:Image id="Icon.16x16" DefaultValue="https://gsi-email-ingestion-request-uat.munichre.com/assets/icon-16.png" />
+        <bt:Image id="Icon.32x32" DefaultValue="https://gsi-email-ingestion-request-uat.munichre.com/assets/icon-32.png" />
+        <bt:Image id="Icon.80x80" DefaultValue="https://gsi-email-ingestion-request-uat.munichre.com/assets/icon-80.png" />
       </bt:Images>
       <bt:Urls>
-        <bt:Url id="Taskpane.Url" DefaultValue="https://gsi-email-ingestion-request-qa.munichre.com/index.html" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://gsi-email-ingestion-request-uat.munichre.com/index.html" />
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="CommandsGroup.Label" DefaultValue="UWWB - QA" />
+        <bt:String id="CommandsGroup.Label" DefaultValue="UWWB - UAT" />
         <bt:String id="TaskpaneButton.Label" DefaultValue="Send to Workbench" />
         <bt:String id="TaskpaneButton.SupertipTitle" DefaultValue="Send to Workbench" />
       </bt:ShortStrings>

@@ -14,7 +14,7 @@ export async function getGraphToken(): Promise<AuthenticationResult | null> {
     await msalInstance.initialize();
   }
   const account = getCurrentAccount();
-  const graphScopes = (process.env.REACT_APP_AZURE_GRAPH_SCOPES || "Mail.Send,Mail.ReadWrite,Mail.Read.Shared,Mail.Send.Shared,openid,profile,offline_access").split(",");
+  const graphScopes = (process.env.REACT_APP_AZURE_GRAPH_SCOPES || "Mail.Send,Mail.ReadWrite,openid,profile,offline_access").split(",");
   
   // Debug account information
   console.log('MSAL Account:', account ? {

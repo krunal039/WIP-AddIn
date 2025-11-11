@@ -5,27 +5,14 @@ import { detectFileProtectionFromBase64, isSupportedFileType } from '../utils/fi
  * FileValidationService - Validates email attachments for various restrictions
  * 
  * CAPABILITIES:
- * ✅ Zip/Compressed files: Detects .zip, .rar, .7z, .tar, .gz, etc.
- * ✅ Unsupported file types: Validates against whitelist of supported extensions
- * ✅ Basic encrypted files: Detects .gpg, .pgp, .encrypted files
- * ✅ Basic password-protected files: Detects files with "password" in filename
- * ✅ Office document encryption: Detects password-protected Word, Excel, PowerPoint files
- * ✅ PDF password protection: Detects password-protected PDF files
- * ⚠️  M365 encryption: Limited detection based on file patterns and content types
+ * Zip/Compressed files: Detects .zip, .rar, .7z, .tar, .gz, etc.
+ * Unsupported file types: Validates against whitelist of supported extensions
+ * Basic encrypted files: Detects .gpg, .pgp, .encrypted files
+ * Basic password-protected files: Detects files with "password" in filename
+ * Office document encryption: Detects password-protected Word, Excel, PowerPoint files
+ * PDF password protection: Detects password-protected PDF files
+ *  M365 encryption: Limited detection based on file patterns and content types
  * 
- * LIMITATIONS:
- * ❌ M365 encryption: Microsoft 365 encryption is complex and may not always be detectable
- *    through simple file analysis. M365 encrypted files might appear as normal files
- *    with standard content types.
- * ❌ Advanced password protection: Some password-protected files may not be detected
- *    if they don't have obvious indicators in filename or content type.
- * ❌ File content analysis: This service only analyzes metadata (filename, size, content type)
- *    and cannot read actual file content to determine encryption status.
- * 
- * RECOMMENDATIONS:
- * - For production use, consider implementing server-side file analysis
- * - Add user education about file restrictions
- * - Consider allowing users to override certain warnings for legitimate files
  */
 
 export interface FileValidationError {

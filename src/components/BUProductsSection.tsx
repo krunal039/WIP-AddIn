@@ -89,8 +89,7 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = ({
                   return (
                     <div key={index} style={{ 
                       marginBottom: '8px', 
-                      fontWeight: '600',
-                      fontSize: '14px'
+                      fontWeight: '600'
                     }}>
                       {line}
                     </div>
@@ -100,8 +99,7 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = ({
                 return (
                   <div key={index} style={{ 
                     marginLeft: '16px', 
-                    marginBottom: '4px',
-                    fontSize: '13px'
+                    marginBottom: '4px'
                   }}>
                     {line}
                   </div>

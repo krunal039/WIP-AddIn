@@ -3,14 +3,14 @@
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
   xmlns:mailappor="http://schemas.microsoft.com/office/mailappversionoverrides/1.0" xsi:type="MailApp">
   <Id>7f1b1c9a-3c3d-4d1a-b88b-1420c0c6de7a</Id>
-  <Version>1.0.0.0</Version>
+  <Version>1.1.0.0</Version>
   <ProviderName>MunichRe</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
   <DisplayName DefaultValue="UWWB" />
   <Description DefaultValue="UWWB - MunichRe Outlook Add-in." />
   <IconUrl DefaultValue="https://gsi-email-ingestion-request.munichre.com/assets/icon-80.png" />
   <HighResolutionIconUrl DefaultValue="https://gsi-email-ingestion-request.munichre.com/assets/icon-80.png" />
-  <SupportUrl DefaultValue="https://learn.microsoft.com/office/dev/add-ins/overview/office-add-in-code-samples" />
+  <SupportUrl DefaultValue="https://www.MunichRe.com" />
   <AppDomains>
     <AppDomain>https://www.MunichRe.com</AppDomain>
     <AppDomain>https://login.microsoftonline.com/</AppDomain>
@@ -22,7 +22,6 @@
     <AppDomain>https://appsforoffice.microsoft.com</AppDomain>
     <AppDomain>https://csp.microsoft.com</AppDomain>
     <AppDomain>https://M365CDN.nel.measure.office.net</AppDomain>
-    <AppDomain>https://gsi-email-ingestion-request.munichre.com/</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Mailbox" />
@@ -42,11 +41,12 @@
   </FormSettings>
   <Permissions>ReadWriteItem</Permissions>
   <Rule xsi:type="RuleCollection" Mode="Or">
+    <Rule xsi:type="ItemIs" ItemType="Appointment" FormType="Edit" />
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Edit" />
-    <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read" />
   </Rule>
   <DisableEntityHighlighting>false</DisableEntityHighlighting>
-  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_1">
+  <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">
+    <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides/1.1" xsi:type="VersionOverridesV1_1">
     <Requirements>
       <bt:Sets DefaultMinVersion="1.13">
         <bt:Set Name="Mailbox" />
@@ -57,31 +57,6 @@
         <DesktopFormFactor>
           <SupportsSharedFolders>true</SupportsSharedFolders>
           <FunctionFile resid="Taskpane.Url" />
-
-          <!-- Message Compose -->
-
-          <ExtensionPoint xsi:type="MessageComposeCommandSurface">
-            <OfficeTab id="TabMessage">
-              <Group id="msgComposeCmdGroup_compose">
-                <Label resid="CommandsGroup.Label" />
-                <Control xsi:type="Button" id="msgInsertGist_compose">
-                  <Label resid="TaskpaneButton.Label" />
-                  <Supertip>
-                    <Title resid="TaskpaneButton.SupertipTitle" />
-                    <Description resid="TaskpaneButton.SupertipText" />
-                  </Supertip>
-                  <Icon>
-                    <bt:Image size="16" resid="Icon.16x16" />
-                    <bt:Image size="32" resid="Icon.32x32" />
-                    <bt:Image size="80" resid="Icon.80x80" />
-                  </Icon>
-                  <Action xsi:type="ShowTaskpane">
-                    <SourceLocation resid="Taskpane.Url" />
-                  </Action>
-                </Control>
-              </Group>
-            </OfficeTab>
-          </ExtensionPoint>
 
           <ExtensionPoint xsi:type="MessageReadCommandSurface">
             <OfficeTab id="TabDefault">
@@ -126,5 +101,6 @@
         <bt:String id="TaskpaneButton.SupertipText" DefaultValue="Send to Workbench" />
       </bt:LongStrings>
     </Resources>
+    </VersionOverrides>
   </VersionOverrides>
 </OfficeApp>
