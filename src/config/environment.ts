@@ -2,34 +2,13 @@
 // Uses runtime configuration loaded from environments.json
 import runtimeConfig from './runtimeConfig';
 
-// Helper function to get environment value with fallback to process.env only during initialization
+// Helper function to get environment value
 const getEnvValue = (key: string, defaultValue: string = ''): string => {
-  // Try runtime config first (preferred) - use it if initialized, even if value is empty
-  if (runtimeConfig.isInitialized()) {
-    // Check if key exists in config (even if value is empty string)
-    const allConfig = runtimeConfig.getAll();
-    if (key in allConfig) {
-      return runtimeConfig.getString(key, defaultValue);
-    }
-    // Key doesn't exist in runtime config, use default
-    return defaultValue;
-  }
-  // Fallback to process.env ONLY during initialization (before runtime config loads)
-  // This should rarely be used since we initialize config before app renders
-  return process.env[key] || defaultValue;
+  return runtimeConfig.getString(key, defaultValue);
 };
 
 const getEnvBoolean = (key: string, defaultValue: boolean = false): boolean => {
-  if (runtimeConfig.isInitialized()) {
-    // Check if key exists in config
-    const allConfig = runtimeConfig.getAll();
-    if (key in allConfig) {
-      return runtimeConfig.getBoolean(key, defaultValue);
-    }
-    return defaultValue;
-  }
-  // Fallback to process.env ONLY during initialization
-  return process.env[key] === 'true' || defaultValue;
+  return runtimeConfig.getBoolean(key, defaultValue);
 };
 
 export const environment = {

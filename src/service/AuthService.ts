@@ -41,21 +41,9 @@ class AuthService {
     }
 
     try {
-      // Wait for runtime config to be initialized before creating MSAL instance
+      // Config should already be initialized before AuthService is used
       if (!runtimeConfig.isInitialized()) {
-        DebugService.auth('Waiting for runtime config to initialize...');
-        // Wait a bit and check again (config should be loading)
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds max wait
-        while (!runtimeConfig.isInitialized() && attempts < maxAttempts) {
-          await new Promise(resolve => setTimeout(resolve, 100));
-          attempts++;
-        }
-        
-        if (!runtimeConfig.isInitialized()) {
-          throw new Error('Runtime config not initialized after waiting. Make sure runtimeConfig.initialize() is called before using AuthService.');
-        }
-        DebugService.auth('Runtime config initialized, proceeding with MSAL initialization');
+        throw new Error('Runtime config not initialized. Make sure runtimeConfig.initialize() is called before using AuthService.');
       }
 
       DebugService.auth('Initializing MSAL');

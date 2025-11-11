@@ -24,22 +24,7 @@ Office.onReady().then(async () => {
     const config = runtimeConfig.getAll();
     
     // Now that config is loaded, DebugService will respect DEBUG_ENABLED
-    DebugService.info('✅ Runtime configuration initialized successfully (ONE-TIME LOAD)');
-    DebugService.info(`📍 Detected environment: ${detectedEnv}`);
-    DebugService.info(`📊 Total configuration keys loaded: ${Object.keys(config).length}`);
-    DebugService.debug('🔑 Key config values:', {
-      AZURE_CLIENT_ID: config.REACT_APP_AZURE_CLIENT_ID,
-      AZURE_AUTHORITY: config.REACT_APP_AZURE_AUTHORITY,
-      AZURE_REDIRECT_URI: config.REACT_APP_AZURE_REDIRECT_URI,
-      PLACEMENT_API_URL: config.REACT_APP_PLACEMENT_API_URL,
-      LOGGING_API_URL: config.REACT_APP_LOGGING_API_URL,
-      DEBUG_ENABLED: config.REACT_APP_DEBUG_ENABLED,
-      DEBUG_LEVEL: config.REACT_APP_DEBUG_LEVEL
-    });
-
-    // Initialize DebugService now that config is loaded
-    // This ensures DebugService respects the DEBUG_ENABLED and DEBUG_LEVEL settings
-    DebugService.logInitialization();
+    DebugService.info(`✅ Configuration loaded - Environment: ${detectedEnv}, Keys: ${Object.keys(config).length}`);
 
     // Create MSAL instance AFTER config is loaded to ensure correct redirect URI
     DebugService.info('Creating MSAL instance with runtime config...');

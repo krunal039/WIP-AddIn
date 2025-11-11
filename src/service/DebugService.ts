@@ -36,22 +36,6 @@ export class DebugService {
     // The first log call will check the config and respect DEBUG_ENABLED
   }
 
-  /**
-   * Logs initialization info only if debug is enabled
-   * Call this after runtime config is loaded
-   */
-  public logInitialization(): void {
-    if (this.DEBUG_ENABLED) {
-      console.log('🔧 DebugService initialized:', {
-        enabled: this.DEBUG_ENABLED,
-        level: this.DEBUG_LEVEL,
-        currentLevel: this.DEBUG_LEVELS[this.DEBUG_LEVEL as keyof typeof this.DEBUG_LEVELS] || 2,
-        runtimeConfigInitialized: runtimeConfig.isInitialized(),
-        environment: runtimeConfig.isInitialized() ? runtimeConfig.getEnvironment() : 'not loaded'
-      });
-    }
-  }
-
   public static getInstance(): DebugService {
     if (!DebugService.instance) {
       DebugService.instance = new DebugService();
