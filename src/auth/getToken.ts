@@ -1,23 +1,27 @@
-import msalInstance from "./msalInstance";
-import { loginRequest } from "./msalConfig";
+import { getMsalInstance } from "./msalInstance";
+import { getLoginRequest } from "./msalConfig";
 import { AccountInfo, AuthenticationResult } from "@azure/msal-browser";
+import { environment } from "../config/environment";
+import DebugService from "../service/DebugService";
 
 // Utility to get the current account
 function getCurrentAccount(): AccountInfo | undefined {
+  const msalInstance = getMsalInstance();
   const accounts = msalInstance.getAllAccounts();
   return accounts.length > 0 ? accounts[0] : undefined;
 }
 
 // Get token for Microsoft Graph
 export async function getGraphToken(): Promise<AuthenticationResult | null> {
+  const msalInstance = getMsalInstance();
   if (typeof msalInstance.initialize === "function") {
     await msalInstance.initialize();
   }
   const account = getCurrentAccount();
-  const graphScopes = (process.env.REACT_APP_AZURE_GRAPH_SCOPES || "Mail.Send,Mail.ReadWrite,openid,profile,offline_access").split(",");
+  const graphScopes = environment.AZURE_GRAPH_SCOPES.split(",").map(s => s.trim());
   
   // Debug account information
-  console.log('MSAL Account:', account ? {
+  DebugService.debug('MSAL Account:', account ? {
     username: account.username,
     localAccountId: account.localAccountId,
     homeAccountId: account.homeAccountId
@@ -26,9 +30,9 @@ export async function getGraphToken(): Promise<AuthenticationResult | null> {
   // Debug Office context
   try {
     const officeUserEmail = Office.context.mailbox.userProfile.emailAddress;
-    console.log('Office context user:', officeUserEmail);
+    DebugService.debug('Office context user:', officeUserEmail);
   } catch (error) {
-    console.warn('Could not get Office context user:', error);
+    DebugService.warn('Could not get Office context user:', error);
   }
   
   try {
@@ -58,11 +62,12 @@ export async function getGraphToken(): Promise<AuthenticationResult | null> {
 
 // Get token for your API (.default)
 export async function getApiToken(): Promise<AuthenticationResult | null> {
+  const msalInstance = getMsalInstance();
   if (typeof msalInstance.initialize === "function") {
     await msalInstance.initialize();
   }
   const account = getCurrentAccount();
-  const apiScopes = (process.env.REACT_APP_AZURE_API_SCOPES || "api://d3398715-8435-43df-ac85-d28afd62f0e3/.default").split(",");
+  const apiScopes = environment.AZURE_API_SCOPES.split(",").map(s => s.trim());
   try {
     if (account) {
       return await msalInstance.acquireTokenSilent({

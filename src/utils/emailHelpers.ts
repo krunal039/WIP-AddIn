@@ -1,3 +1,5 @@
+import DebugService from '../service/DebugService';
+
 export const getSubject = (item: Office.MessageRead | Office.MessageCompose): Promise<string> => {
   return new Promise((resolve, reject) => {
     try {
@@ -5,23 +7,23 @@ export const getSubject = (item: Office.MessageRead | Office.MessageCompose): Pr
         (item as Office.MessageCompose).subject.getAsync((res) => {
           if (res.status === Office.AsyncResultStatus.Succeeded) {
             const subject = res.value || '';
-            console.log('getSubject (compose mode):', subject, 'type:', typeof subject);
+            DebugService.debug('getSubject (compose mode):', subject, 'type:', typeof subject);
             // Ensure we always return a string
             resolve(String(subject));
           } else {
-            console.error('getSubject (compose mode) failed:', res.error);
+            DebugService.error('getSubject (compose mode) failed:', res.error);
             // Return empty string instead of rejecting to prevent crashes
             resolve('');
           }
         });
       } else {
         const subject = (item as Office.MessageRead).subject || '';
-        console.log('getSubject (read mode):', subject, 'type:', typeof subject);
+        DebugService.debug('getSubject (read mode):', subject, 'type:', typeof subject);
         // Ensure we always return a string
         resolve(String(subject));
       }
     } catch (error) {
-      console.error('getSubject error:', error);
+      DebugService.error('getSubject error:', error);
       // Return empty string instead of rejecting to prevent crashes
       resolve('');
     }
@@ -35,23 +37,23 @@ export const getSender = (item: Office.MessageRead | Office.MessageCompose): Pro
         (item as Office.MessageCompose).from.getAsync((res) => {
           if (res.status === Office.AsyncResultStatus.Succeeded) {
             const sender = res.value?.emailAddress || Office.context.mailbox.userProfile.emailAddress;
-            console.log('getSender (compose mode):', sender, 'type:', typeof sender);
+            DebugService.debug('getSender (compose mode):', sender, 'type:', typeof sender);
             // Ensure we always return a string
             resolve(String(sender));
           } else {
-            console.error('getSender (compose mode) failed:', res.error);
+            DebugService.error('getSender (compose mode) failed:', res.error);
             // Return user email instead of rejecting to prevent crashes
             resolve(String(Office.context.mailbox.userProfile.emailAddress));
           }
         });
       } else {
         const sender = (item as Office.MessageRead).from?.emailAddress || Office.context.mailbox.userProfile.emailAddress;
-        console.log('getSender (read mode):', sender, 'type:', typeof sender);
+        DebugService.debug('getSender (read mode):', sender, 'type:', typeof sender);
         // Ensure we always return a string
         resolve(String(sender));
       }
     } catch (error) {
-      console.error('getSender error:', error);
+      DebugService.error('getSender error:', error);
       // Return user email instead of rejecting to prevent crashes
       resolve(String(Office.context.mailbox.userProfile.emailAddress));
     }
@@ -121,7 +123,7 @@ export const detectSharedMailbox = (item: Office.MessageRead | Office.MessageCom
             const sharedProperties = result.value;
             const mailboxEmail = sharedProperties.owner || sharedProperties.targetMailbox || currentUserEmail;
             
-            console.log('Shared mailbox detected:', {
+            DebugService.debug('Shared mailbox detected:', {
               isShared: true,
               mailboxEmail: mailboxEmail,
               owner: sharedProperties.owner,
@@ -134,7 +136,7 @@ export const detectSharedMailbox = (item: Office.MessageRead | Office.MessageCom
             });
           } else {
             // Not a shared mailbox or API not supported
-            console.log('Personal mailbox detected or getSharedPropertiesAsync not supported');
+            DebugService.debug('Personal mailbox detected or getSharedPropertiesAsync not supported');
             resolve({
               isShared: false,
               mailboxEmail: currentUserEmail
@@ -144,14 +146,14 @@ export const detectSharedMailbox = (item: Office.MessageRead | Office.MessageCom
       } else {
         // Fallback: Check if we're in a different context
         // This is a conservative approach for when the API isn't available
-        console.log('getSharedPropertiesAsync not available, assuming personal mailbox');
+        DebugService.debug('getSharedPropertiesAsync not available, assuming personal mailbox');
         resolve({
           isShared: false,
           mailboxEmail: currentUserEmail
         });
       }
     } catch (error) {
-      console.error('Error detecting shared mailbox:', error);
+      DebugService.error('Error detecting shared mailbox:', error);
       resolve({
         isShared: false,
         mailboxEmail: Office.context.mailbox.userProfile.emailAddress

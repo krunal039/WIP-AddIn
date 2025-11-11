@@ -1,9 +1,5 @@
 import DebugService from "./DebugService";
-
-const API_URL =
-  process.env.REACT_APP_PLACEMENT_API_URL ||
-  "https://localhost:4001/api/placements";
-const SUBSCRIPTION_KEY = process.env.REACT_APP_PLACEMENT_API_KEY || "";
+import { environment } from "../config/environment";
 
 export interface PlacementRequestData {
   productCode: string;
@@ -31,9 +27,29 @@ class PlacementApiService {
     return PlacementApiService.instance;
   }
 
+  /**
+   * Gets the API URL dynamically from environment config
+   */
+  private getApiUrl(): string {
+    const url = environment.PLACEMENT_API_URL || "https://localhost:4001/api/placements";
+    DebugService.debug("PlacementApiService API_URL:", url);
+    return url;
+  }
+
+  /**
+   * Gets the subscription key dynamically from environment config
+   */
+  private getSubscriptionKey(): string {
+    const key = environment.PLACEMENT_API_KEY || "";
+    if (!key) {
+      DebugService.warn("PlacementApiService: PLACEMENT_API_KEY is empty");
+    }
+    return key;
+  }
+
   private getAuthHeaders(apiToken: string): Record<string, string> {
     return {
-      "Ocp-Apim-Subscription-Key": SUBSCRIPTION_KEY,
+      "Ocp-Apim-Subscription-Key": this.getSubscriptionKey(),
       Authorization: `Bearer ${apiToken}`,
     };
   }
@@ -41,7 +57,7 @@ class PlacementApiService {
   public sanitizeEMLFileName(input: string): string {
   // Ensure input is a string and not empty
   if (!input || typeof input !== 'string') {
-    console.log('sanitizeEMLFileName: Invalid input:', { input, type: typeof input });
+    DebugService.warn('sanitizeEMLFileName: Invalid input:', { input, type: typeof input });
     return "email";
   }
 
@@ -127,14 +143,15 @@ class PlacementApiService {
       formData.append("files", emlFile);
 
       const headers = this.getAuthHeaders(apiToken);
+      const apiUrl = this.getApiUrl();
 
-      DebugService.api("POST", API_URL, {
+      DebugService.api("POST", apiUrl, {
         productCode: data.productCode,
         emailSubject: data.emailSubject,
         emlFileSize: emlFile.size,
       });
 
-      const response = await fetch(API_URL, {
+      const response = await fetch(apiUrl, {
         method: "POST",
         headers,
         body: formData,

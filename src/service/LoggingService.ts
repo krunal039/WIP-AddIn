@@ -1,18 +1,36 @@
 import AuthService from './AuthService';
-
-const LOGGING_API_URL = process.env.REACT_APP_LOGGING_API_URL;
-const LOGGING_API_KEY = process.env.REACT_APP_LOGGING_API_KEY;
+import { environment } from '../config/environment';
+import DebugService from './DebugService';
 
 export type SeverityLevel = 'Information' | 'Verbose' | 'Event' | 'Exception';
 
 class LoggingService {
   private static instance: LoggingService;
-  private baseUrl: string;
-  private apiKey: string;
 
   private constructor() {
-    this.baseUrl = LOGGING_API_URL || '';
-    this.apiKey = LOGGING_API_KEY || '';
+    // Don't initialize values here - read them dynamically when needed
+  }
+
+  /**
+   * Gets the logging API URL dynamically from environment config
+   */
+  private getBaseUrl(): string {
+    const url = environment.LOGGING_API_URL || '';
+    if (!url) {
+      DebugService.warn('[LoggingService] LOGGING_API_URL is empty, logging will be disabled');
+    }
+    return url;
+  }
+
+  /**
+   * Gets the logging API key dynamically from environment config
+   */
+  private getApiKey(): string {
+    const key = environment.LOGGING_API_KEY || '';
+    if (!key) {
+      DebugService.warn('[LoggingService] LOGGING_API_KEY is empty');
+    }
+    return key;
   }
 
   public static getInstance(): LoggingService {
@@ -25,7 +43,7 @@ class LoggingService {
   private async getAuthHeaders(): Promise<Record<string, string>> {
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
-      'Ocp-Apim-Subscription-Key': this.apiKey,
+      'Ocp-Apim-Subscription-Key': this.getApiKey(),
     };
 
     try {
@@ -37,31 +55,28 @@ class LoggingService {
     } catch (error) {
       // If token acquisition fails, log without authorization
       // This ensures logging doesn't break the application
-      if (process.env.NODE_ENV === 'development') {
-        console.warn('Failed to get API token for logging:', error);
-      }
+      DebugService.warn('Failed to get API token for logging:', error);
     }
 
     return headers;
   }
 
   private async postLog(logTable: 'trace' | 'event' | 'exception', body: any) {
-    if (!this.baseUrl) return;
+    const baseUrl = this.getBaseUrl();
+    if (!baseUrl) return;
     
     try {
       const headers = await this.getAuthHeaders();
       
-      await fetch(`${this.baseUrl}/${logTable}`, {
+      await fetch(`${baseUrl}/${logTable}`, {
         method: 'POST',
         headers,
         body: JSON.stringify(body),
       });
     } catch (err) {
       // Swallow errors to avoid breaking app flow
-      // Optionally, log to console for dev
-      if (process.env.NODE_ENV === 'development') {
-        console.error('LoggingService error:', err);
-      }
+      // Log errors through DebugService
+      DebugService.error('LoggingService error:', err);
     }
   }
 

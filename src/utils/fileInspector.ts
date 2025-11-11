@@ -47,7 +47,9 @@ async function isOfficeEncrypted(ab: ArrayBuffer): Promise<boolean> {
         name.toLowerCase().includes('encryptioninfo')
       );
     } catch (error) {
-      console.warn('[FileInspector] Error parsing ZIP file:', error);
+      // Import DebugService dynamically to avoid circular dependencies
+      const DebugService = require('../service/DebugService').default;
+      DebugService.warn('[FileInspector] Error parsing ZIP file:', error);
       return false;
     }
   }
@@ -65,7 +67,9 @@ async function isOfficeEncrypted(ab: ArrayBuffer): Promise<boolean> {
         name.includes('/encryptioninfo')
       );
     } catch (error) {
-      console.warn('[FileInspector] Error parsing OLE file:', error);
+      // Import DebugService dynamically to avoid circular dependencies
+      const DebugService = require('../service/DebugService').default;
+      DebugService.warn('[FileInspector] Error parsing OLE file:', error);
       return false;
     }
   }

@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo todo",
     "prebuild": "node scripts/log-env.js",
-    "start": "concurrently \"node proxy-server.js\" \"webpack serve --mode development --open\"",
+    "start": "concurrently \"webpack serve --mode development --open\"",
     "build": "webpack --config webpack.config.js --mode production --progress",
     "postbuild": "node -e \"const fs=require('fs'); fs.copyFileSync('staticwebapp.config.json', 'dist/staticwebapp.config.json');\"",
     "lint": "eslint src --ext .ts,.tsx",
@@ -22,7 +22,6 @@
     "axios": "^1.10.0",
     "cfb": "^1.2.2",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.0",
     "express": "^5.1.0",
     "form-data": "^4.0.4",
     "fs": "^0.0.1-security",

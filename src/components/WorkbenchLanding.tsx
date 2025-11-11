@@ -144,7 +144,7 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     try {
       await Office.onReady();
     } catch (err) {
-      console.error("Office.js failed to initialize:", err);
+      DebugService.error("Office.js failed to initialize:", err);
       setShowFailureMessage(true);
       return;
     }
@@ -152,12 +152,12 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     try {
       item = Office.context.mailbox.item;
     } catch (err) {
-      console.error("Unable to access mailbox item:", err);
+      DebugService.error("Unable to access mailbox item:", err);
       setShowFailureMessage(true);
       return;
     }
     if (!item) {
-      console.error("No email item available");
+      DebugService.error("No email item available");
       return;
     }
 
@@ -165,9 +165,9 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     try {
       const isDuplicateN = await checkDuplicateSubmission(item, DebugService);
       setIsDuplicate(isDuplicateN);
-      console.error("Is duplicate Check Done");
+      DebugService.debug("Is duplicate Check Done");
     } catch (err) {
-      console.error("Error in Duplicate function");
+      DebugService.error("Error in Duplicate function", err);
     }
 
     // Check if it's a draft email and get the subject
@@ -229,10 +229,10 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
             { coercionType: Office.CoercionType.Html },
             (result: Office.AsyncResult<void>) => {
               if (result.status === Office.AsyncResultStatus.Succeeded) {
-                console.log("Banner added successfully.");
+                DebugService.debug("Banner added successfully.");
                 resolve();
               } else {
-                console.error("Error adding banner:", result.error.message);
+                DebugService.error("Error adding banner:", result.error.message);
                 reject(result.error);
               }
             }
@@ -240,11 +240,11 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
         });
       } else {
         // We're in read mode, can't add banner
-        console.log("Cannot add banner in read mode - item is not in compose mode.");
+        DebugService.debug("Cannot add banner in read mode - item is not in compose mode.");
         return Promise.resolve(); // Don't reject, just skip adding the banner
       }
     } else {
-      console.error("Not a message item.");
+      DebugService.error("Not a message item.");
       return Promise.reject("Invalid context - not a message item.");
     }
   };

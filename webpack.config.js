@@ -2,8 +2,6 @@ const path = require("path");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const webpack = require("webpack");
-const dotenv = require("dotenv");
-const env = dotenv.config().parsed || {};
 const fs = require('fs');
 
 module.exports = {
@@ -42,6 +40,10 @@ module.exports = {
           from: path.resolve(__dirname, "public", "assets"),
           to: path.resolve(__dirname, "dist", "assets"),
         },
+        {
+          from: path.resolve(__dirname, "environments.json"),
+          to: path.resolve(__dirname, "dist", "environments.json"),
+        },
       ],
     }),
     new webpack.ProvidePlugin({
@@ -49,7 +51,7 @@ module.exports = {
     }),
     new webpack.DefinePlugin({
       'process.env': JSON.stringify({
-        ...env,
+        // Only include NODE_ENV - all other env vars come from environments.json at runtime
         NODE_ENV: process.env.NODE_ENV || 'development',
       }),
     }),

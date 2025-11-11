@@ -8,6 +8,7 @@ import OfficeIdConverterService from './OfficeIdConverterService';
 import { getSender, getSubject, getCreatedDate, detectSharedMailbox } from '../utils/emailHelpers';
 import { stampEmailWithWorkbenchId } from '../utils/emailStamping';
 import { showWorkbenchNotificationBanner } from '../utils/outlookNotification';
+import { environment } from '../config/environment';
 
 export interface WorkbenchSubmissionResult {
   success: boolean;
@@ -24,7 +25,9 @@ export class WorkbenchService {
   private static instance: WorkbenchService;
   
   // Environment variables
-  private readonly sharedMailbox: string = process.env.REACT_APP_CYBER_MRSNA_MAILBOX || process.env.REACT_APP_DEFAULT_SHARED_MAILBOX || '';
+  private get sharedMailbox(): string {
+    return environment.CYBER_MRSNA_MAILBOX || environment.DEFAULT_SHARED_MAILBOX || '';
+  }
 
   private constructor() {}
 

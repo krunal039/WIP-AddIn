@@ -4,6 +4,7 @@ import WorkbenchLanding from './components/WorkbenchLanding';
 import { initializeIcons } from '@fluentui/react/lib/Icons';
 import { Spinner, SpinnerSize, MessageBar, MessageBarType, PrimaryButton } from '@fluentui/react';
 import AuthService from './service/AuthService';
+import DebugService from './service/DebugService';
 import './components/SharedGrid.css';
 
 initializeIcons();
@@ -20,19 +21,19 @@ export const App: React.FC = () => {
 
   const refreshTokens = useCallback(async () => {
     try {
-      console.log('Refreshing tokens...');
+      DebugService.auth('Refreshing tokens...');
       const { apiToken: newApiToken, graphToken: newGraphToken } = await AuthService.acquireBothTokens();
       
       if (newApiToken?.accessToken && newGraphToken?.accessToken) {
         setApiToken(newApiToken.accessToken);
         setGraphToken(newGraphToken.accessToken);
-        console.log('Tokens refreshed successfully');
+        DebugService.auth('Tokens refreshed successfully');
       } else {
         throw new Error('Failed to refresh tokens');
       }
       
     } catch (error) {
-      console.error('Token refresh failed:', error);
+      DebugService.error('Token refresh failed:', error);
       // If refresh fails, try to re-authenticate
       await authenticate();
     }
@@ -44,7 +45,7 @@ export const App: React.FC = () => {
       setAuthError(null);
       setIsAuthenticated(null); // Set to loading state
       
-      console.log('Starting authentication...');
+      DebugService.auth('Starting authentication...');
       
       // Acquire both tokens in a single session to prevent multiple popups
       const { apiToken: apiTokenResult, graphToken: graphTokenResult } = await AuthService.acquireBothTokens();
@@ -60,10 +61,10 @@ export const App: React.FC = () => {
       setApiToken(apiTokenResult.accessToken);
       setGraphToken(graphTokenResult.accessToken);
       setIsAuthenticated(true);
-      console.log('Authentication successful - both API and Graph tokens acquired');
+      DebugService.auth('Authentication successful - both API and Graph tokens acquired');
       
     } catch (error) {
-      console.error('Authentication error:', error);
+      DebugService.error('Authentication error:', error);
       setAuthError(error instanceof Error ? error.message : 'Authentication failed. Please try again.');
       setIsAuthenticated(false);
     }
@@ -82,11 +83,11 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (isAuthenticated && apiToken && graphToken) {
       const interval = setInterval(refreshTokens, TOKEN_REFRESH_INTERVAL);
-      console.log('Token auto-refresh interval set up');
+      DebugService.debug('Token auto-refresh interval set up');
       
       return () => {
         clearInterval(interval);
-        console.log('Token auto-refresh interval cleared');
+        DebugService.debug('Token auto-refresh interval cleared');
       };
     }
   }, [isAuthenticated, apiToken, graphToken, refreshTokens]);
@@ -105,14 +106,14 @@ export const App: React.FC = () => {
           setApiToken(cachedApiToken.accessToken);
           setGraphToken(cachedGraphToken.accessToken);
           setIsAuthenticated(true);
-          console.log('User already authenticated with valid tokens');
+          DebugService.auth('User already authenticated with valid tokens');
         } else {
           // User needs to authenticate
           setIsAuthenticated(false);
-          console.log('User needs to authenticate');
+          DebugService.auth('User needs to authenticate');
         }
       } catch (error) {
-        console.error('Initial auth check failed:', error);
+        DebugService.error('Initial auth check failed:', error);
         // If initial check fails, user needs to authenticate
         setIsAuthenticated(false);
       } finally {

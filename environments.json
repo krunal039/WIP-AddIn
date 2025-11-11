@@ -1,0 +1,128 @@
+{
+  "environments": {
+    "localhost": {
+      "REACT_APP_AZURE_CLIENT_ID": "ac5a0071-e224-401f-a7e6-d401e1fc5ff8",
+      "REACT_APP_AZURE_TENANT_ID": "cc83b6ac-505f-4efc-a552-a2c7bfa6d7e3",
+      "REACT_APP_AZURE_AUTHORITY": "https://login.microsoftonline.com/cc83b6ac-505f-4efc-a552-a2c7bfa6d7e3",
+      "REACT_APP_AZURE_REDIRECT_URI": "https://localhost:3001",
+      "REACT_APP_AZURE_API_SCOPES": "ac5a0071-e224-401f-a7e6-d401e1fc5ff8/.default",
+      "REACT_APP_AZURE_GRAPH_SCOPES": "Mail.ReadWrite,Mail.Send",
+      "REACT_APP_AZURE_GLOBAL_SCOPES": "openid,profile,offline_access",
+      "REACT_APP_PLACEMENT_API_URL": "http://localhost:3005/api/placements",
+      "REACT_APP_LOGGING_API_URL": "http://localhost:3005/api/log",
+      "REACT_APP_CYBER_MRSNA_MAILBOX": "krunal@codetails.com",
+      "REACT_APP_DEFAULT_SHARED_MAILBOX": "krunal@codetails.com",
+      "REACT_APP_DRAFT_EMAIL_SUBJECT": "This is draft subject",
+      "REACT_APP_DEBUG_ENABLED": true,
+      "REACT_APP_DEBUG_LEVEL": "error",
+      "REACT_APP_RUN_TESTS": false,
+      "REACT_APP_TEST_ENV_VARS": false,
+      "REACT_APP_TEST_MSAL_CONFIG": false,
+      "REACT_APP_TEST_MSAL_SETUP": false,
+      "REACT_APP_TEST_MSAL_FULL": false
+    },
+    "dev": {
+      "REACT_APP_AZURE_CLIENT_ID": "a0ec6f14-47ca-4e3e-bf43-5ea8ff5a05c2",
+      "REACT_APP_AZURE_TENANT_ID": "582259a1-dcaa-4cca-b1cf-e60d3f045ecd",
+      "REACT_APP_AZURE_AUTHORITY": "https://login.microsoftonline.com/582259a1-dcaa-4cca-b1cf-e60d3f045ecd",
+      "REACT_APP_AZURE_REDIRECT_URI": "https://gsi-email-ingestion-request-dev.munichre.com/",
+      "REACT_APP_AZURE_API_SCOPES": "a0ec6f14-47ca-4e3e-bf43-5ea8ff5a05c2/.default",
+      "REACT_APP_AZURE_GRAPH_SCOPES": "Mail.ReadWrite,Mail.Send",
+      "REACT_APP_AZURE_GLOBAL_SCOPES": "openid,profile,offline_access",
+      "REACT_APP_PLACEMENT_API_URL": "https://localhost:3005/placements",
+      "REACT_APP_LOGGING_API_URL": "https://localhost:3005/log",
+      "REACT_APP_CYBER_MRSNA_MAILBOX": "krpatel@munichre.com",
+      "REACT_APP_DEFAULT_SHARED_MAILBOX": "krpatel@munichre.com",
+      "REACT_APP_DRAFT_EMAIL_SUBJECT": "This is draft subject",
+      "REACT_APP_DEBUG_ENABLED": true,
+      "REACT_APP_DEBUG_LEVEL": "debug",
+      "REACT_APP_RUN_TESTS": false,
+      "REACT_APP_TEST_ENV_VARS": true,
+      "REACT_APP_TEST_MSAL_CONFIG": true,
+      "REACT_APP_TEST_MSAL_SETUP": true,
+      "REACT_APP_TEST_MSAL_FULL": true
+    },
+    "qa": {
+      "REACT_APP_AZURE_CLIENT_ID": "5d794362-3dc4-49ee-88b3-24b913612cec",
+      "REACT_APP_AZURE_TENANT_ID": "582259a1-dcaa-4cca-b1cf-e60d3f045ecd",
+      "REACT_APP_AZURE_AUTHORITY": "https://login.microsoftonline.com/582259a1-dcaa-4cca-b1cf-e60d3f045ecd",
+      "REACT_APP_AZURE_REDIRECT_URI": "https://gsi-email-ingestion-request-qa.munichre.com/",
+      "REACT_APP_AZURE_API_SCOPES": "5d794362-3dc4-49ee-88b3-24b913612cec/.default",
+      "REACT_APP_AZURE_GRAPH_SCOPES": "Mail.ReadWrite,Mail.Send",
+      "REACT_APP_AZURE_GLOBAL_SCOPES": "openid,profile,offline_access",
+      "REACT_APP_PLACEMENT_API_URL": "https://gsi-email-ingestion-request-qa.munichre.com/api/placements",
+      "REACT_APP_LOGGING_API_URL": "https://localhost:3005/log",
+      "REACT_APP_CYBER_MRSNA_MAILBOX": "p0060020376@munichre.com",
+      "REACT_APP_DEFAULT_SHARED_MAILBOX": "p0060020376@munichre.com",
+      "REACT_APP_DRAFT_EMAIL_SUBJECT": "This is draft subject",
+      "REACT_APP_DEBUG_ENABLED": true,
+      "REACT_APP_DEBUG_LEVEL": "debug",
+      "REACT_APP_RUN_TESTS": false,
+      "REACT_APP_TEST_ENV_VARS": true,
+      "REACT_APP_TEST_MSAL_CONFIG": true,
+      "REACT_APP_TEST_MSAL_SETUP": true,
+      "REACT_APP_TEST_MSAL_FULL": true
+    },
+    "uat": {
+      "REACT_APP_AZURE_CLIENT_ID": "40deb33e-93f5-44bf-88b9-67ecddc983d3",
+      "REACT_APP_AZURE_TENANT_ID": "582259a1-dcaa-4cca-b1cf-e60d3f045ecd",
+      "REACT_APP_AZURE_AUTHORITY": "https://login.microsoftonline.com/582259a1-dcaa-4cca-b1cf-e60d3f045ecd",
+      "REACT_APP_AZURE_REDIRECT_URI": "https://gsi-email-ingestion-request-uat.munichre.com",
+      "REACT_APP_AZURE_API_SCOPES": "40deb33e-93f5-44bf-88b9-67ecddc983d3/.default",
+      "REACT_APP_AZURE_GRAPH_SCOPES": "Mail.ReadWrite,Mail.Send",
+      "REACT_APP_AZURE_GLOBAL_SCOPES": "openid,profile,offline_access",
+      "REACT_APP_PLACEMENT_API_URL": "https://gsi-email-ingestion-request-uat.munichre.com/api/placements",
+      "REACT_APP_LOGGING_API_URL": "https://localhost:3005/log",
+      "REACT_APP_CYBER_MRSNA_MAILBOX": "p0060020376@munichre.com",
+      "REACT_APP_DEFAULT_SHARED_MAILBOX": "p0060020376@munichre.com",
+      "REACT_APP_DRAFT_EMAIL_SUBJECT": "This is draft subject",
+      "REACT_APP_DEBUG_ENABLED": true,
+      "REACT_APP_DEBUG_LEVEL": "debug",
+      "REACT_APP_RUN_TESTS": false,
+      "REACT_APP_TEST_ENV_VARS": true,
+      "REACT_APP_TEST_MSAL_CONFIG": true,
+      "REACT_APP_TEST_MSAL_SETUP": true,
+      "REACT_APP_TEST_MSAL_FULL": true
+    },
+    "prod": {
+      "REACT_APP_AZURE_CLIENT_ID": "40deb33e-93f5-44bf-88b9-67ecddc983d3",
+      "REACT_APP_AZURE_TENANT_ID": "582259a1-dcaa-4cca-b1cf-e60d3f045ecd",
+      "REACT_APP_AZURE_AUTHORITY": "https://login.microsoftonline.com/582259a1-dcaa-4cca-b1cf-e60d3f045ecd",
+      "REACT_APP_AZURE_REDIRECT_URI": "https://gsi-email-ingestion-request.munichre.com",
+      "REACT_APP_AZURE_API_SCOPES": "40deb33e-93f5-44bf-88b9-67ecddc983d3/.default",
+      "REACT_APP_AZURE_GRAPH_SCOPES": "Mail.ReadWrite,Mail.Send",
+      "REACT_APP_AZURE_GLOBAL_SCOPES": "openid,profile,offline_access",
+      "REACT_APP_PLACEMENT_API_URL": "https://gsi-email-ingestion-request.munichre.com/api/placements",
+      "REACT_APP_LOGGING_API_URL": "https://localhost:3005/log",
+      "REACT_APP_CYBER_MRSNA_MAILBOX": "p0060020376@munichre.com",
+      "REACT_APP_DEFAULT_SHARED_MAILBOX": "p0060020376@munichre.com",
+      "REACT_APP_DRAFT_EMAIL_SUBJECT": "This is draft subject",
+      "REACT_APP_DEBUG_ENABLED": false,
+      "REACT_APP_DEBUG_LEVEL": "error",
+      "REACT_APP_RUN_TESTS": false,
+      "REACT_APP_TEST_ENV_VARS": true,
+      "REACT_APP_TEST_MSAL_CONFIG": true,
+      "REACT_APP_TEST_MSAL_SETUP": true,
+      "REACT_APP_TEST_MSAL_FULL": true
+    }
+  },
+  "urlPatterns": {
+    "localhost": [
+      "localhost",
+      "127.0.0.1"
+    ],
+    "dev": [
+      "gsi-email-ingestion-request-dev.munichre.com"
+    ],
+    "qa": [
+      "gsi-email-ingestion-request-qa.munichre.com"
+    ],
+    "uat": [
+      "gsi-email-ingestion-request-uat.munichre.com"
+    ],
+    "prod": [
+      "gsi-email-ingestion-request.munichre.com"
+    ]
+  }
+}
+

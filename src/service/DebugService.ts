@@ -1,13 +1,26 @@
 /**
  * Centralized debugging service for the Outlook Add-in
- * Controls console logging based on environment variables
+ * Controls console logging based on environment variables from environments.json
+ * 
+ * IMPORTANT: This service reads from runtime config, so it will respect
+ * the DEBUG_ENABLED and DEBUG_LEVEL settings from the loaded environment.
  */
+import { environment } from '../config/environment';
+import runtimeConfig from '../config/runtimeConfig';
+
 export class DebugService {
   private static instance: DebugService;
   
-  // Environment variable to control debug logging
-  private readonly DEBUG_ENABLED: boolean = process.env.REACT_APP_DEBUG_ENABLED === 'true';
-  private readonly DEBUG_LEVEL: string = process.env.REACT_APP_DEBUG_LEVEL || 'info';
+  // Environment variable to control debug logging - read dynamically from runtime config
+  private get DEBUG_ENABLED(): boolean {
+    // Always allow reading the config value, even if runtime config isn't initialized yet
+    // This allows DebugService to work during initial load
+    return environment.DEBUG_ENABLED;
+  }
+  
+  private get DEBUG_LEVEL(): string {
+    return environment.DEBUG_LEVEL;
+  }
   
   // Debug levels
   private readonly DEBUG_LEVELS = {
@@ -19,12 +32,22 @@ export class DebugService {
   };
 
   private constructor() {
-    // Log debug service initialization
+    // Don't log during construction - wait until runtime config is loaded
+    // The first log call will check the config and respect DEBUG_ENABLED
+  }
+
+  /**
+   * Logs initialization info only if debug is enabled
+   * Call this after runtime config is loaded
+   */
+  public logInitialization(): void {
     if (this.DEBUG_ENABLED) {
       console.log('🔧 DebugService initialized:', {
         enabled: this.DEBUG_ENABLED,
         level: this.DEBUG_LEVEL,
-        currentLevel: this.DEBUG_LEVELS[this.DEBUG_LEVEL as keyof typeof this.DEBUG_LEVELS] || 2
+        currentLevel: this.DEBUG_LEVELS[this.DEBUG_LEVEL as keyof typeof this.DEBUG_LEVELS] || 2,
+        runtimeConfigInitialized: runtimeConfig.isInitialized(),
+        environment: runtimeConfig.isInitialized() ? runtimeConfig.getEnvironment() : 'not loaded'
       });
     }
   }
@@ -47,6 +70,12 @@ export class DebugService {
    * Check if a specific debug level should be logged
    */
   private shouldLog(level: string): boolean {
+    // Errors should always be logged, even if DEBUG_ENABLED is false
+    if (level === 'error') {
+      return true;
+    }
+    
+    // For all other levels, check DEBUG_ENABLED
     if (!this.DEBUG_ENABLED) return false;
     
     const currentLevel = this.DEBUG_LEVELS[this.DEBUG_LEVEL as keyof typeof this.DEBUG_LEVELS] || 2;
@@ -57,11 +86,11 @@ export class DebugService {
 
   /**
    * Log error messages
+   * Errors are always logged, even if DEBUG_ENABLED is false
    */
   public error(message: string, ...args: any[]): void {
-    if (this.shouldLog('error')) {
-      console.error(`🔴 [ERROR] ${message}`, ...args);
-    }
+    // Always log errors - they're important regardless of debug setting
+    console.error(`🔴 [ERROR] ${message}`, ...args);
   }
 
   /**
