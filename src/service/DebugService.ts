@@ -147,7 +147,7 @@ export class DebugService {
   /**
    * Log object data in a formatted way
    */
-  public object(label: string, obj: any): void {
+  public object(label: string, obj: unknown): void {
     if (this.shouldLog('debug')) {
       console.log(`📊 [OBJECT] ${label}:`, obj);
     }
@@ -156,7 +156,7 @@ export class DebugService {
   /**
    * Log API calls
    */
-  public api(method: string, url: string, data?: any): void {
+  public api(method: string, url: string, data?: unknown): void {
     if (this.shouldLog('debug')) {
       console.log(`🌐 [API] ${method} ${url}`, data ? { data } : '');
     }
@@ -165,7 +165,7 @@ export class DebugService {
   /**
    * Log authentication events
    */
-  public auth(event: string, details?: any): void {
+  public auth(event: string, details?: unknown): void {
     if (this.shouldLog('info')) {
       console.log(`🔐 [AUTH] ${event}`, details || '');
     }
@@ -174,7 +174,7 @@ export class DebugService {
   /**
    * Log email operations
    */
-  public email(operation: string, details?: any): void {
+  public email(operation: string, details?: unknown): void {
     if (this.shouldLog('info')) {
       console.log(`📧 [EMAIL] ${operation}`, details || '');
     }
@@ -183,7 +183,7 @@ export class DebugService {
   /**
    * Log placement operations
    */
-  public placement(operation: string, details?: any): void {
+  public placement(operation: string, details?: unknown): void {
     if (this.shouldLog('info')) {
       console.log(`📦 [PLACEMENT] ${operation}`, details || '');
     }

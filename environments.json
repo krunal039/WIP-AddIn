@@ -13,7 +13,7 @@
       "REACT_APP_CYBER_MRSNA_MAILBOX": "krunal@codetails.com",
       "REACT_APP_DEFAULT_SHARED_MAILBOX": "krunal@codetails.com",
       "REACT_APP_DRAFT_EMAIL_SUBJECT": "This is draft subject",
-      "REACT_APP_DEBUG_ENABLED": true,
+      "REACT_APP_DEBUG_ENABLED": false,
       "REACT_APP_DEBUG_LEVEL": "error",
       "REACT_APP_RUN_TESTS": false,
       "REACT_APP_TEST_ENV_VARS": false,

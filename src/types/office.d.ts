@@ -1,71 +1,29 @@
-declare namespace Office {
-  namespace MailboxEnums {
-    enum ItemType {
-      Message = "message"
-    }
-    enum ItemMode {
-      Read = "read",
-      Compose = "compose"
-    }
-    enum RestVersion {
-      v2_0 = "v2.0"
-    }
-    enum ItemNotificationMessageType {
-      InformationalMessage = "informationalMessage"
-    }
-  }
+// Extended Office.js type definitions for better type safety
 
-  interface AsyncResult<T> {
-    status: Office.AsyncResultStatus;
-    value?: T;
-    error?: any;
-  }
+/**
+ * Extended Office Item type that includes common properties
+ */
+export interface ExtendedOfficeItem extends Office.Item {
+  itemId?: string;
+  itemType?: Office.MailboxEnums.ItemType;
+  subject?: Office.Subject;
+  internetHeaders?: Office.InternetHeaders;
+  loadCustomPropertiesAsync?: (callback: (result: Office.AsyncResult<Office.CustomProperties>) => void) => void;
+  saveAsync?: (callback?: (result: Office.AsyncResult<void>) => void) => void;
+  getAllInternetHeadersAsync?: (callback: (result: Office.AsyncResult<string>) => void) => void;
+}
 
-  enum AsyncResultStatus {
-    Succeeded = "succeeded",
-    Failed = "failed"
-  }
+/**
+ * Office Message Read type
+ */
+export type OfficeMessageRead = Office.MessageRead & ExtendedOfficeItem;
 
-  interface Context {
-    mailbox: {
-      item: Item;
-      userProfile: UserProfile;
-      convertToRestId(
-        ids: string[],
-        restVersion: MailboxEnums.RestVersion,
-        callback: (result: AsyncResult<string[]>) => void
-      ): void;
-    };
-    auth: {
-      getAccessTokenAsync(options: {
-        scopes: string[];
-        callback: (result: AsyncResult<string>) => void;
-      }): void;
-    };
-  }
+/**
+ * Office Message Compose type
+ */
+export type OfficeMessageCompose = Office.MessageCompose & ExtendedOfficeItem;
 
-  interface Item {
-    itemType: MailboxEnums.ItemType;
-    subject?: {
-      getAsync(callback: (result: AsyncResult<string>) => void): void;
-    };
-    internetHeaders?: {
-      getAsync(headerNames: string[], callback: (result: AsyncResult<any>) => void): void;
-    };
-    getAllInternetHeadersAsync?(callback: (result: AsyncResult<string>) => void): void;
-    loadCustomPropertiesAsync?(callback: (result: AsyncResult<CustomProperties>) => void): void;
-    saveAsync?(callback: (result: AsyncResult<string>) => void): void;
-    itemId?: string;
-  }
-
-  interface CustomProperties {
-    get(key: string): string | undefined;
-    set(key: string, value: string): void;
-    saveAsync(callback: (result: AsyncResult<void>) => void): void;
-  }
-
-  interface UserProfile {
-    displayName: string;
-    emailAddress: string;
-  }
-} 
+/**
+ * Union type for Office items
+ */
+export type OfficeItem = Office.Item | ExtendedOfficeItem;

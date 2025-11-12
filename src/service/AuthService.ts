@@ -78,7 +78,7 @@ class AuthService {
 
   // Check if Office SSO is available
   public isOfficeSSOAvailable(): boolean {
-    return !!(Office && Office.context && Office.context.auth);
+    return !!(Office && Office.context && (Office.context as any).auth);
   }
 
   // Get token using Office SSO
@@ -90,9 +90,9 @@ class AuthService {
     try {
       DebugService.auth('Attempting Office SSO token acquisition');
       return new Promise((resolve, reject) => {
-        Office.context.auth.getAccessTokenAsync({
+        (Office.context as any).auth.getAccessTokenAsync({
           scopes: scopes,
-          callback: (result) => {
+          callback: (result: Office.AsyncResult<string>) => {
             if (result.status === Office.AsyncResultStatus.Succeeded) {
               DebugService.auth('Office SSO token acquired successfully');
               resolve(result.value || null);

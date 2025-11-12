@@ -154,7 +154,10 @@ export class WorkbenchService {
     }
   }
 
-  private async saveAndGetItemId(item: Office.Item, retry = 0): Promise<string> {
+  private async saveAndGetItemId(item: Office.Item | undefined, retry = 0): Promise<string> {
+    if (!item) {
+      throw new Error('Item is undefined');
+    }
     return new Promise((resolve, reject) => {
       (item as any).saveAsync((result: any) => {
         if (result.status === Office.AsyncResultStatus.Succeeded) {
@@ -163,7 +166,7 @@ export class WorkbenchService {
             DebugService.debug('Got Exchange ID from saveAsync:', exchangeId);
             
             // Convert Exchange ID to REST ID for Graph API
-            Office.context.mailbox.convertToRestId(
+            (Office.context.mailbox as any).convertToRestId(
               [exchangeId],
               Office.MailboxEnums.RestVersion.v2_0,
               (convertResult: Office.AsyncResult<string[]>) => {
@@ -263,10 +266,12 @@ export class WorkbenchService {
     const converter = new EmailConverterService();
     const emlData = await converter.convertEmailToEml(item);
 
-    // Use util helpers for subject, sender, and created date
-    const emailSender = await getSender(item as any);
-    const emailSubject = await getSubject(item as any);
-    const emailReceivedDateTime = await getCreatedDate(item as any);
+    // Use util helpers for subject, sender, and created date (parallel execution)
+    const [emailSender, emailSubject, emailReceivedDateTime] = await Promise.all([
+      getSender(item as any),
+      getSubject(item as any),
+      getCreatedDate(item as any)
+    ]);
 
     // Ensure all values are strings to prevent .replace() errors
     const validatedEmailSender = String(emailSender || '');
@@ -293,11 +298,15 @@ export class WorkbenchService {
 
     // Step 4: Stamp the email with workbench ID BEFORE forwarding
     DebugService.debug('Stamping email with workbench ID before forwarding');
-    await stampEmailWithWorkbenchId(item, placementData.placementId, DebugService);
+    if (item) {
+      await stampEmailWithWorkbenchId(item, placementData.placementId, DebugService);
+    }
 
     // Step 4.5: Show Outlook notification banner with WBID
     DebugService.debug('Showing Outlook notification banner with WBID');
-    await showWorkbenchNotificationBanner(item, placementData.placementId, DebugService);
+    if (item) {
+      await showWorkbenchNotificationBanner(item, placementData.placementId, DebugService);
+    }
 
     // Step 5: Handle email forwarding only if needed
     if (productCode === "20001" && sendCopyToCyberAdmin) {

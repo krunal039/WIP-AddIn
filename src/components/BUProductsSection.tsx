@@ -37,7 +37,7 @@ interface BUProductsSectionProps {
   isSubmitDisabled?: boolean;
 }
 
-const BUProductsSection: React.FC<BUProductsSectionProps> = ({
+const BUProductsSection: React.FC<BUProductsSectionProps> = React.memo(({
   selectedProduct,
   selectedBU,
   optionsProducts,
@@ -225,6 +225,8 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = ({
       </div>
     </div>
   );
-};
+});
+
+BUProductsSection.displayName = 'BUProductsSection';
 
 export default BUProductsSection; 

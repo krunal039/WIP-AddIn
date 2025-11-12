@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useLocalStorage } from "../hooks/useLocalStorage";
 import {
   DatePicker,
   DefaultButton,
@@ -30,11 +31,12 @@ import LoggingService from "../service/LoggingService";
 import DebugService from "../service/DebugService";
 import OfficeModeService from "../service/OfficeModeService";
 import { checkDuplicateSubmission } from "../utils/duplicateDetection";
-import { submitPlacement } from "../utils/placementSubmission";
+// Removed placementSubmission wrapper - calling service directly
 import FileValidationService, { FileValidationResult } from "../service/FileValidationService";
 import LandingSection from "./LandingSection";
 import BUProductsSection from "./BUProductsSection";
 import WorkbenchHeader from "./WorkbenchHeader";
+import { BU_OPTIONS, PRODUCT_OPTIONS, DEFAULTS, STORAGE_KEYS } from "../constants";
 
 export interface WorkbenchLandingProps {
   apiToken: string | null;
@@ -51,16 +53,8 @@ const dropdownStyles: Partial<IDropdownStyles> = {
   },
 };
 
-const optionsBU: IDropdownOption[] = [
-  { key: "MRSNA", text: "MRSNA" },
-  { key: "MRSGM", text: "MRSGM" },
-];
-
-const optionsProducts: IDropdownOption[] = [
-  { key: "20001", text: "Cyber" },
-  { key: "10013", text: "NA LPL" },
-  { key: "10012", text: "NA MPL" },
-];
+const optionsBU: IDropdownOption[] = BU_OPTIONS;
+const optionsProducts: IDropdownOption[] = PRODUCT_OPTIONS;
 
 const addIcon: IIconProps = { iconName: "Add" };
 const backIcon: IIconProps = { iconName: "Back" };
@@ -74,12 +68,12 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
   // State
   const [showLanding, setShowLanding] = useState(true);
   const [showBUProducts, setShowBUProducts] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useState("20001");
-  const [selectedBU, setSelectedBU] = useState("MRSGM");
+  const [selectedProduct, setSelectedProduct] = useLocalStorage(STORAGE_KEYS.SELECTED_PRODUCT, DEFAULTS.PRODUCT);
+  const [selectedBU, setSelectedBU] = useLocalStorage(STORAGE_KEYS.SELECTED_BU, DEFAULTS.BU);
+  const [sendCopyToCyberAdmin, setSendCopyToCyberAdmin] = useLocalStorage<boolean>(STORAGE_KEYS.SEND_COPY_TO_CYBER_ADMIN, DEFAULTS.SEND_COPY_TO_CYBER_ADMIN);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showFailureMessage, setShowFailureMessage] = useState(false);
   const [showLoadingMessage, setShowLoadingMessage] = useState(false);
-  const [sendCopyToCyberAdmin, setSendCopyToCyberAdmin] = useState(false);
   const [forwardingFailed, setForwardingFailed] = useState(false);
   const [forwardingFailedReason, setForwardingFailedReason] = useState<
     string | undefined
@@ -99,46 +93,6 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
   const [isDuplicate, setIsDuplicate] = useState<boolean>(false);
   const [fileValidationResult, setFileValidationResult] = useState<FileValidationResult>({ isValid: true, errors: [] });
   const [isValidatingFiles, setIsValidatingFiles] = useState<boolean>(false);
-
-  // Handlers
-
-  useEffect(() => {
-    try {
-      const savedProduct = window.localStorage.getItem("wb.selectedProduct");
-      const savedBU = window.localStorage.getItem("wb.selectedBU");
-      const savedCopy = window.localStorage.getItem("wb.sendCopyToCyberAdmin");
-      if (savedProduct) {
-        setSelectedProduct(savedProduct);
-      }
-      if (savedBU) {
-        setSelectedBU(savedBU);
-      }
-      if (savedCopy !== null) {
-        setSendCopyToCyberAdmin(savedCopy === "true");
-      }
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem("wb.selectedProduct", selectedProduct);
-    } catch {}
-  }, [selectedProduct]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem("wb.selectedBU", selectedBU);
-    } catch {}
-  }, [selectedBU]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(
-        "wb.sendCopyToCyberAdmin",
-        String(sendCopyToCyberAdmin)
-      );
-    } catch {}
-  }, [sendCopyToCyberAdmin]);
 
   const handleDownloadEmail = async () => {
     try {
@@ -163,7 +117,7 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
 
     //Check if the email already sent for Ingestion
     try {
-      const isDuplicateN = await checkDuplicateSubmission(item, DebugService);
+      const isDuplicateN = await checkDuplicateSubmission(item);
       setIsDuplicate(isDuplicateN);
       DebugService.debug("Is duplicate Check Done");
     } catch (err) {
@@ -214,6 +168,10 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     await Office.onReady();
 
     const item = Office.context.mailbox.item;
+    if (!item) {
+      DebugService.error("No email item available for banner");
+      return;
+    }
 
     // Check if item is a message
     if (item.itemType === Office.MailboxEnums.ItemType.Message) {
@@ -351,7 +309,7 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
         return;
       }
 
-      const isDuplicate = await checkDuplicateSubmission(item, DebugService);
+      const isDuplicate = await checkDuplicateSubmission(item as any);
       DebugService.debug("Duplicate detection result:", isDuplicate);
       if (isDuplicate) {
         DebugService.debug("Duplicate detected - showing confirmation dialog");
@@ -359,13 +317,12 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
         setShowConfirmationDialog(true);
         return;
       }
-      const result = await submitPlacement(
+      const result = await workbenchService.submitPlacement(
         apiToken!,
         graphToken!,
         item,
         selectedProduct,
-        sendCopyToCyberAdmin,
-        workbenchService
+        sendCopyToCyberAdmin
       );
       if (result.success) {
         if (result.forwardingFailed) {
@@ -395,13 +352,12 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     try {
       const item = Office.context.mailbox.item;
       if (item) {
-        const result = await submitPlacement(
+        const result = await workbenchService.submitPlacement(
           apiToken!,
           graphToken!,
           item,
           selectedProduct,
-          sendCopyToCyberAdmin,
-          workbenchService
+          sendCopyToCyberAdmin
         );
         if (result.success) {
           if (result.forwardingFailed) {
@@ -533,15 +489,15 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     } else if (selectedProduct === "NA_LPL" || selectedProduct === "NA_MPL") {
       selectedBU = "MRSNA";
     }
-    setSelectedProduct(selectedProduct);
-    setSelectedBU(selectedBU);
+    if (selectedProduct) setSelectedProduct(selectedProduct as any);
+    if (selectedBU) setSelectedBU(selectedBU as any);
   };
 
   const handleBUChange = (
     _event: React.FormEvent<HTMLDivElement>,
     option?: IDropdownOption
   ) => {
-    setSelectedBU(option?.key as string);
+    if (option?.key) setSelectedBU(option.key as any);
   };
 
   // Render

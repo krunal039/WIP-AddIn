@@ -8,7 +8,7 @@ interface LandingSectionProps {
   onNewPlacement: () => void;
 }
 
-const LandingSection: React.FC<LandingSectionProps> = ({ onNewPlacement }) => (
+const LandingSection: React.FC<LandingSectionProps> = React.memo(({ onNewPlacement }) => (
   <div className="ms-Grid" dir="ltr" id="maindiv">
     <div className="ms-Grid savesection">
       <div className="ms-Grid-row attachmentdiv">
@@ -48,6 +48,8 @@ const LandingSection: React.FC<LandingSectionProps> = ({ onNewPlacement }) => (
       </div>
     </div>
   </div>
-);
+));
+
+LandingSection.displayName = 'LandingSection';
 
 export default LandingSection; 
