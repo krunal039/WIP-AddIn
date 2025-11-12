@@ -296,16 +296,13 @@ export class WorkbenchService {
     const placementData = await PlacementApiService.submitPlacementRequest(apiToken, data);
     await LoggingService.logPlacementRequest(placementData.placementId, emailSender);
 
-    // Step 4: Stamp the email with workbench ID BEFORE forwarding
-    DebugService.debug('Stamping email with workbench ID before forwarding');
+    // Step 4: Stamp the email and show notification banner in parallel (both are independent operations)
+    DebugService.debug('Stamping email and showing notification banner in parallel');
     if (item) {
-      await stampEmailWithWorkbenchId(item, placementData.placementId, DebugService);
-    }
-
-    // Step 4.5: Show Outlook notification banner with WBID
-    DebugService.debug('Showing Outlook notification banner with WBID');
-    if (item) {
-      await showWorkbenchNotificationBanner(item, placementData.placementId, DebugService);
+      await Promise.all([
+        stampEmailWithWorkbenchId(item, placementData.placementId, DebugService),
+        showWorkbenchNotificationBanner(item, placementData.placementId, DebugService)
+      ]);
     }
 
     // Step 5: Handle email forwarding only if needed

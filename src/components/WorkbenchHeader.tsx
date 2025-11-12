@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo } from "react";
 import { IconButton, IIconProps } from "@fluentui/react";
 
 const backIcon: IIconProps = { iconName: "Back" };
@@ -11,7 +11,7 @@ interface WorkbenchHeaderProps {
   isDuplicate: boolean;
 }
 
-const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({ onBack, onHome, title, isDuplicate }) => (
+const WorkbenchHeaderComponent: React.FC<WorkbenchHeaderProps> = ({ onBack, onHome, title, isDuplicate }) => (
   <div>
     <header style={{ display: "flex", alignItems: "center", padding: "0px" }}>
       <IconButton
@@ -43,5 +43,8 @@ const WorkbenchHeader: React.FC<WorkbenchHeaderProps> = ({ onBack, onHome, title
     )}
   </div>
 );
+
+const WorkbenchHeader = memo(WorkbenchHeaderComponent);
+WorkbenchHeader.displayName = 'WorkbenchHeader';
 
 export default WorkbenchHeader; 

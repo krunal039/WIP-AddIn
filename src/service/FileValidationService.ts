@@ -73,9 +73,16 @@ class FileValidationService {
         return { isValid: true, errors: [] };
       }
 
-      // Check for compressed files
-      const zipFiles = attachments.filter(att => this.isCompressedFile(att.name));
+      // Parallelize independent validation checks for better performance
+      const [zipFiles, unsupportedFiles, encryptedFiles, passwordProtectedFiles] = await Promise.all([
+        Promise.resolve(attachments.filter(att => this.isCompressedFile(att.name))),
+        Promise.resolve(attachments.filter(att => !this.isSupportedFile(att.name))),
+        this.detectEncryptedFiles(attachments),
+        this.detectPasswordProtectedFiles(attachments)
+      ]);
+
       DebugService.debug(`Found ${zipFiles.length} compressed files:`, zipFiles.map(f => f.name));
+      
       if (zipFiles.length > 0) {
         errors.push({
           type: 'zip',
@@ -85,8 +92,6 @@ class FileValidationService {
         DebugService.debug('Added zip validation error');
       }
 
-      // Check for unsupported file types
-      const unsupportedFiles = attachments.filter(att => !this.isSupportedFile(att.name));
       if (unsupportedFiles.length > 0) {
         errors.push({
           type: 'unsupported',
@@ -95,8 +100,6 @@ class FileValidationService {
         });
       }
 
-      // Check for encrypted files (basic detection)
-      const encryptedFiles = await this.detectEncryptedFiles(attachments);
       if (encryptedFiles.length > 0) {
         errors.push({
           type: 'encrypted',
@@ -105,8 +108,6 @@ class FileValidationService {
         });
       }
 
-      // Check for password protected files (basic detection)
-      const passwordProtectedFiles = await this.detectPasswordProtectedFiles(attachments);
       if (passwordProtectedFiles.length > 0) {
         errors.push({
           type: 'password_protected',

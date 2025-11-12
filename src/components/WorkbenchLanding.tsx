@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 import { useLocalStorage } from "../hooks/useLocalStorage";
 import {
   DatePicker,
@@ -115,41 +115,38 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
       return;
     }
 
-    //Check if the email already sent for Ingestion
-    try {
-      const isDuplicateN = await checkDuplicateSubmission(item);
-      setIsDuplicate(isDuplicateN);
-      DebugService.debug("Is duplicate Check Done");
-    } catch (err) {
-      DebugService.error("Error in Duplicate function", err);
-    }
-
-    // Check if it's a draft email and get the subject
+    // Parallelize independent operations: duplicate check, subject extraction, and file validation
     const isDraft = OfficeModeService.isComposeMode();
     setIsDraftEmail(isDraft);
 
-    // Get the email subject
     try {
-      const subject = await new Promise<string>((resolve) => {
-        (item as any).subject.getAsync((result: any) => {
-          if (result.status === Office.AsyncResultStatus.Succeeded) {
-            resolve(result.value || "");
-          } else {
-            resolve("");
-          }
-        });
-      });
+      const [isDuplicateN, subject, filesValid] = await Promise.all([
+        checkDuplicateSubmission(item),
+        new Promise<string>((resolve) => {
+          (item as any).subject.getAsync((result: any) => {
+            if (result.status === Office.AsyncResultStatus.Succeeded) {
+              resolve(result.value || "");
+            } else {
+              resolve("");
+            }
+          });
+        }).catch(() => ""),
+        validateEmailFiles(item)
+      ]);
+      
+      setIsDuplicate(isDuplicateN);
       setEmailSubject(subject);
-    } catch (error) {
-      DebugService.warn("Failed to get email subject:", error);
+      DebugService.debug("Is duplicate Check Done");
+      
+      if (!filesValid) {
+        DebugService.warn("File validation failed - showing error message");
+        // Don't return here - let the UI show the error message
+      }
+    } catch (err) {
+      DebugService.error("Error in parallel operations:", err);
+      // Set defaults on error
+      setIsDuplicate(false);
       setEmailSubject("");
-    }
-
-    // Validate email attachments
-    const filesValid = await validateEmailFiles(item);
-    if (!filesValid) {
-      DebugService.warn("File validation failed - showing error message");
-      // Don't return here - let the UI show the error message
     }
 
     // Trigger early save when user first interacts with UI
@@ -302,15 +299,19 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
         }
       }
 
-      // Validate files before proceeding
-      const filesValid = await validateEmailFiles(item);
+      // Validate files and check for duplicates in parallel (both are independent operations)
+      const [filesValid, isDuplicate] = await Promise.all([
+        validateEmailFiles(item),
+        checkDuplicateSubmission(item as any)
+      ]);
+      
+      DebugService.debug("Duplicate detection result:", isDuplicate);
+      
       if (!filesValid) {
         setShowLoadingMessage(false);
         return;
       }
-
-      const isDuplicate = await checkDuplicateSubmission(item as any);
-      DebugService.debug("Duplicate detection result:", isDuplicate);
+      
       if (isDuplicate) {
         DebugService.debug("Duplicate detected - showing confirmation dialog");
         setShowLoadingMessage(false);
@@ -478,7 +479,18 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     // Optionally reset other state as needed
   };
 
-  const handleProductChange = (
+  // Memoize expensive computations
+  const fileValidationErrorMessage = useMemo(() => 
+    FileValidationService.getAllErrorMessages(fileValidationResult.errors),
+    [fileValidationResult.errors]
+  );
+
+  const isSubmitDisabled = useMemo(() => 
+    !fileValidationResult.isValid || isValidatingFiles,
+    [fileValidationResult.isValid, isValidatingFiles]
+  );
+
+  const handleProductChange = useCallback((
     _event: React.FormEvent<HTMLDivElement>,
     option?: IDropdownOption
   ) => {
@@ -491,14 +503,14 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     }
     if (selectedProduct) setSelectedProduct(selectedProduct as any);
     if (selectedBU) setSelectedBU(selectedBU as any);
-  };
+  }, [setSelectedProduct, setSelectedBU]);
 
-  const handleBUChange = (
+  const handleBUChange = useCallback((
     _event: React.FormEvent<HTMLDivElement>,
     option?: IDropdownOption
   ) => {
     if (option?.key) setSelectedBU(option.key as any);
-  };
+  }, [setSelectedBU]);
 
   // Render
   // Security check - ensure we have valid tokens
@@ -550,8 +562,8 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
               onSubmit={handleSubmit}
               emailSubject={emailSubject}
               isDraftEmail={isDraftEmail}
-              fileValidationError={FileValidationService.getAllErrorMessages(fileValidationResult.errors)}
-              isSubmitDisabled={!fileValidationResult.isValid || isValidatingFiles}
+                    fileValidationError={fileValidationErrorMessage}
+                    isSubmitDisabled={isSubmitDisabled}
             />
           )}
           <ConfirmationDialog
