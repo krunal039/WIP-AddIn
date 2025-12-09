@@ -6,11 +6,15 @@
       "172.201.161.174/32",
       "4.180.129.87/32",
       "9.163.238.41/32",
-       "172.211.30.10/32"
+      "172.211.30.10/32",
+      "108.143.71.61/32"
     ]
   },
   "globalHeaders": {
-    "Content-Security-Policy": "default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; connect-src *"
+    "Content-Security-Policy": "default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline'; connect-src *",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+    "Access-Control-Allow-Headers": "*"
   },
   "mimeTypes": {
     ".json": "application/json",

@@ -36,6 +36,22 @@ export class DebugService {
     // The first log call will check the config and respect DEBUG_ENABLED
   }
 
+  /**
+   * Logs initialization info only if debug is enabled
+   * Call this after runtime config is loaded
+   */
+  public logInitialization(): void {
+    if (this.DEBUG_ENABLED) {
+      console.log('🔧 DebugService initialized:', {
+        enabled: this.DEBUG_ENABLED,
+        level: this.DEBUG_LEVEL,
+        currentLevel: this.DEBUG_LEVELS[this.DEBUG_LEVEL as keyof typeof this.DEBUG_LEVELS] || 2,
+        runtimeConfigInitialized: runtimeConfig.isInitialized(),
+        environment: runtimeConfig.isInitialized() ? runtimeConfig.getEnvironment() : 'not loaded'
+      });
+    }
+  }
+
   public static getInstance(): DebugService {
     if (!DebugService.instance) {
       DebugService.instance = new DebugService();
@@ -147,7 +163,7 @@ export class DebugService {
   /**
    * Log object data in a formatted way
    */
-  public object(label: string, obj: unknown): void {
+  public object(label: string, obj: any): void {
     if (this.shouldLog('debug')) {
       console.log(`📊 [OBJECT] ${label}:`, obj);
     }
@@ -156,7 +172,7 @@ export class DebugService {
   /**
    * Log API calls
    */
-  public api(method: string, url: string, data?: unknown): void {
+  public api(method: string, url: string, data?: any): void {
     if (this.shouldLog('debug')) {
       console.log(`🌐 [API] ${method} ${url}`, data ? { data } : '');
     }
@@ -165,7 +181,7 @@ export class DebugService {
   /**
    * Log authentication events
    */
-  public auth(event: string, details?: unknown): void {
+  public auth(event: string, details?: any): void {
     if (this.shouldLog('info')) {
       console.log(`🔐 [AUTH] ${event}`, details || '');
     }
@@ -174,7 +190,7 @@ export class DebugService {
   /**
    * Log email operations
    */
-  public email(operation: string, details?: unknown): void {
+  public email(operation: string, details?: any): void {
     if (this.shouldLog('info')) {
       console.log(`📧 [EMAIL] ${operation}`, details || '');
     }
@@ -183,7 +199,7 @@ export class DebugService {
   /**
    * Log placement operations
    */
-  public placement(operation: string, details?: unknown): void {
+  public placement(operation: string, details?: any): void {
     if (this.shouldLog('info')) {
       console.log(`📦 [PLACEMENT] ${operation}`, details || '');
     }

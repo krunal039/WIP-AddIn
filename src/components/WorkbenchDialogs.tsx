@@ -7,7 +7,7 @@ interface ConfirmationDialogProps {
   onCancel: () => void;
 }
 
-const ConfirmationDialogComponent: React.FC<ConfirmationDialogProps> = ({
+export const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   isVisible,
   onSendAgain,
   onCancel
@@ -45,9 +45,6 @@ const ConfirmationDialogComponent: React.FC<ConfirmationDialogProps> = ({
   );
 };
 
-export const ConfirmationDialog = React.memo(ConfirmationDialogComponent);
-ConfirmationDialog.displayName = 'ConfirmationDialog';
-
 interface RetryButtonProps {
   isVisible: boolean;
   onRetry: () => void;
@@ -55,7 +52,7 @@ interface RetryButtonProps {
   hasValidData?: boolean;
 }
 
-const RetryButtonComponent: React.FC<RetryButtonProps> = ({ isVisible, onRetry, reason, hasValidData = true }) => {
+export const RetryButton: React.FC<RetryButtonProps> = ({ isVisible, onRetry, reason, hasValidData = true }) => {
   if (!isVisible) return null;
 
   const getButtonText = () => {
@@ -112,15 +109,12 @@ const RetryButtonComponent: React.FC<RetryButtonProps> = ({ isVisible, onRetry, 
   );
 };
 
-export const RetryButton = React.memo(RetryButtonComponent);
-RetryButton.displayName = 'RetryButton';
-
 interface SuccessMessageProps {
   isVisible: boolean;
   onSuccess?: () => void;
 }
 
-const SuccessMessageComponent: React.FC<SuccessMessageProps> = ({ isVisible, onSuccess }) => {
+export const SuccessMessage: React.FC<SuccessMessageProps> = ({ isVisible, onSuccess }) => {
   if (!isVisible) return null;
 
   return (
@@ -169,16 +163,13 @@ const SuccessMessageComponent: React.FC<SuccessMessageProps> = ({ isVisible, onS
   );
 };
 
-export const SuccessMessage = React.memo(SuccessMessageComponent);
-SuccessMessage.displayName = 'SuccessMessage';
-
 interface ErrorMessageProps {
   isVisible: boolean;
   message?: string;
   onSubmit?: () => void;
 }
 
-const ErrorMessageComponent: React.FC<ErrorMessageProps> = ({ isVisible, message, onSubmit }) => {
+export const ErrorMessage: React.FC<ErrorMessageProps> = ({ isVisible, message, onSubmit }) => {
   if (!isVisible) return null;
 
   return (
@@ -259,6 +250,3 @@ const ErrorMessageComponent: React.FC<ErrorMessageProps> = ({ isVisible, message
     </div>
   );
 };
-
-export const ErrorMessage = React.memo(ErrorMessageComponent);
-ErrorMessage.displayName = 'ErrorMessage';

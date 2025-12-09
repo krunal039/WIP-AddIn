@@ -10,7 +10,7 @@ const FormData = require('form-data');
 const app = express();
 const PORT = 3005;
 
-const TARGET_URL = 'https://api-test.munichre.com/gsiuwbdim/dev/placements/v1/api/placements';
+const TARGET_URL = 'https://gsi-email-ingestion-request-dev.munichre.com/api/placements';
 
 // HTTPS cert config
 const httpsOptions = {

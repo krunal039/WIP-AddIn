@@ -1,5 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
-import { useLocalStorage } from "../hooks/useLocalStorage";
+import React, { useEffect, useState } from "react";
 import {
   DatePicker,
   DefaultButton,
@@ -31,12 +30,11 @@ import LoggingService from "../service/LoggingService";
 import DebugService from "../service/DebugService";
 import OfficeModeService from "../service/OfficeModeService";
 import { checkDuplicateSubmission } from "../utils/duplicateDetection";
-// Removed placementSubmission wrapper - calling service directly
+import { submitPlacement } from "../utils/placementSubmission";
 import FileValidationService, { FileValidationResult } from "../service/FileValidationService";
 import LandingSection from "./LandingSection";
 import BUProductsSection from "./BUProductsSection";
 import WorkbenchHeader from "./WorkbenchHeader";
-import { BU_OPTIONS, PRODUCT_OPTIONS, DEFAULTS, STORAGE_KEYS } from "../constants";
 
 export interface WorkbenchLandingProps {
   apiToken: string | null;
@@ -53,8 +51,16 @@ const dropdownStyles: Partial<IDropdownStyles> = {
   },
 };
 
-const optionsBU: IDropdownOption[] = BU_OPTIONS;
-const optionsProducts: IDropdownOption[] = PRODUCT_OPTIONS;
+const optionsBU: IDropdownOption[] = [
+  { key: "MRSNA", text: "MRSNA" },
+  { key: "MRSGM", text: "MRSGM" },
+];
+
+const optionsProducts: IDropdownOption[] = [
+  { key: "20001", text: "Cyber" },
+  { key: "10013", text: "NA LPL" },
+  { key: "10012", text: "NA MPL" },
+];
 
 const addIcon: IIconProps = { iconName: "Add" };
 const backIcon: IIconProps = { iconName: "Back" };
@@ -68,12 +74,12 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
   // State
   const [showLanding, setShowLanding] = useState(true);
   const [showBUProducts, setShowBUProducts] = useState(false);
-  const [selectedProduct, setSelectedProduct] = useLocalStorage(STORAGE_KEYS.SELECTED_PRODUCT, DEFAULTS.PRODUCT);
-  const [selectedBU, setSelectedBU] = useLocalStorage(STORAGE_KEYS.SELECTED_BU, DEFAULTS.BU);
-  const [sendCopyToCyberAdmin, setSendCopyToCyberAdmin] = useLocalStorage<boolean>(STORAGE_KEYS.SEND_COPY_TO_CYBER_ADMIN, DEFAULTS.SEND_COPY_TO_CYBER_ADMIN);
+  const [selectedProduct, setSelectedProduct] = useState("20001");
+  const [selectedBU, setSelectedBU] = useState("MRSGM");
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [showFailureMessage, setShowFailureMessage] = useState(false);
   const [showLoadingMessage, setShowLoadingMessage] = useState(false);
+  const [sendCopyToCyberAdmin, setSendCopyToCyberAdmin] = useState(false);
   const [forwardingFailed, setForwardingFailed] = useState(false);
   const [forwardingFailedReason, setForwardingFailedReason] = useState<
     string | undefined
@@ -93,6 +99,47 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
   const [isDuplicate, setIsDuplicate] = useState<boolean>(false);
   const [fileValidationResult, setFileValidationResult] = useState<FileValidationResult>({ isValid: true, errors: [] });
   const [isValidatingFiles, setIsValidatingFiles] = useState<boolean>(false);
+  const [isUpdateMode, setIsUpdateMode] = React.useState(false);
+
+  // Handlers
+
+  useEffect(() => {
+    try {
+      const savedProduct = window.localStorage.getItem("wb.selectedProduct");
+      const savedBU = window.localStorage.getItem("wb.selectedBU");
+      const savedCopy = window.localStorage.getItem("wb.sendCopyToCyberAdmin");
+      if (savedProduct) {
+        setSelectedProduct(savedProduct);
+      }
+      if (savedBU) {
+        setSelectedBU(savedBU);
+      }
+      if (savedCopy !== null) {
+        setSendCopyToCyberAdmin(savedCopy === "true");
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("wb.selectedProduct", selectedProduct);
+    } catch {}
+  }, [selectedProduct]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("wb.selectedBU", selectedBU);
+    } catch {}
+  }, [selectedBU]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        "wb.sendCopyToCyberAdmin",
+        String(sendCopyToCyberAdmin)
+      );
+    } catch {}
+  }, [sendCopyToCyberAdmin]);
 
   const handleDownloadEmail = async () => {
     try {
@@ -115,38 +162,41 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
       return;
     }
 
-    // Parallelize independent operations: duplicate check, subject extraction, and file validation
+    //Check if the email already sent for Ingestion
+    try {
+      const isDuplicateN = await checkDuplicateSubmission(item, DebugService);
+      setIsDuplicate(isDuplicateN);
+      DebugService.debug("Is duplicate Check Done");
+    } catch (err) {
+      DebugService.error("Error in Duplicate function", err);
+    }
+
+    // Check if it's a draft email and get the subject
     const isDraft = OfficeModeService.isComposeMode();
     setIsDraftEmail(isDraft);
 
+    // Get the email subject
     try {
-      const [isDuplicateN, subject, filesValid] = await Promise.all([
-        checkDuplicateSubmission(item),
-        new Promise<string>((resolve) => {
-          (item as any).subject.getAsync((result: any) => {
-            if (result.status === Office.AsyncResultStatus.Succeeded) {
-              resolve(result.value || "");
-            } else {
-              resolve("");
-            }
-          });
-        }).catch(() => ""),
-        validateEmailFiles(item)
-      ]);
-      
-      setIsDuplicate(isDuplicateN);
+      const subject = await new Promise<string>((resolve) => {
+        (item as any).subject.getAsync((result: any) => {
+          if (result.status === Office.AsyncResultStatus.Succeeded) {
+            resolve(result.value || "");
+          } else {
+            resolve("");
+          }
+        });
+      });
       setEmailSubject(subject);
-      DebugService.debug("Is duplicate Check Done");
-      
-      if (!filesValid) {
-        DebugService.warn("File validation failed - showing error message");
-        // Don't return here - let the UI show the error message
-      }
-    } catch (err) {
-      DebugService.error("Error in parallel operations:", err);
-      // Set defaults on error
-      setIsDuplicate(false);
+    } catch (error) {
+      DebugService.warn("Failed to get email subject:", error);
       setEmailSubject("");
+    }
+
+    // Validate email attachments
+    const filesValid = await validateEmailFiles(item);
+    if (!filesValid) {
+      DebugService.warn("File validation failed - showing error message");
+      // Don't return here - let the UI show the error message
     }
 
     // Trigger early save when user first interacts with UI
@@ -165,10 +215,6 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     await Office.onReady();
 
     const item = Office.context.mailbox.item;
-    if (!item) {
-      DebugService.error("No email item available for banner");
-      return;
-    }
 
     // Check if item is a message
     if (item.itemType === Office.MailboxEnums.ItemType.Message) {
@@ -299,31 +345,28 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
         }
       }
 
-      // Validate files and check for duplicates in parallel (both are independent operations)
-      const [filesValid, isDuplicate] = await Promise.all([
-        validateEmailFiles(item),
-        checkDuplicateSubmission(item as any)
-      ]);
-      
-      DebugService.debug("Duplicate detection result:", isDuplicate);
-      
+      // Validate files before proceeding
+      const filesValid = await validateEmailFiles(item);
       if (!filesValid) {
         setShowLoadingMessage(false);
         return;
       }
-      
+
+      const isDuplicate = await checkDuplicateSubmission(item, DebugService);
+      DebugService.debug("Duplicate detection result:", isDuplicate);
       if (isDuplicate) {
         DebugService.debug("Duplicate detected - showing confirmation dialog");
         setShowLoadingMessage(false);
         setShowConfirmationDialog(true);
         return;
       }
-      const result = await workbenchService.submitPlacement(
+      const result = await submitPlacement(
         apiToken!,
         graphToken!,
         item,
         selectedProduct,
-        sendCopyToCyberAdmin
+        sendCopyToCyberAdmin,
+        workbenchService
       );
       if (result.success) {
         if (result.forwardingFailed) {
@@ -353,12 +396,13 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     try {
       const item = Office.context.mailbox.item;
       if (item) {
-        const result = await workbenchService.submitPlacement(
+        const result = await submitPlacement(
           apiToken!,
           graphToken!,
           item,
           selectedProduct,
-          sendCopyToCyberAdmin
+          sendCopyToCyberAdmin,
+          workbenchService
         );
         if (result.success) {
           if (result.forwardingFailed) {
@@ -479,18 +523,7 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     // Optionally reset other state as needed
   };
 
-  // Memoize expensive computations
-  const fileValidationErrorMessage = useMemo(() => 
-    FileValidationService.getAllErrorMessages(fileValidationResult.errors),
-    [fileValidationResult.errors]
-  );
-
-  const isSubmitDisabled = useMemo(() => 
-    !fileValidationResult.isValid || isValidatingFiles,
-    [fileValidationResult.isValid, isValidatingFiles]
-  );
-
-  const handleProductChange = useCallback((
+  const handleProductChange = (
     _event: React.FormEvent<HTMLDivElement>,
     option?: IDropdownOption
   ) => {
@@ -501,16 +534,35 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     } else if (selectedProduct === "NA_LPL" || selectedProduct === "NA_MPL") {
       selectedBU = "MRSNA";
     }
-    if (selectedProduct) setSelectedProduct(selectedProduct as any);
-    if (selectedBU) setSelectedBU(selectedBU as any);
-  }, [setSelectedProduct, setSelectedBU]);
+    setSelectedProduct(selectedProduct);
+    setSelectedBU(selectedBU);
+  };
 
-  const handleBUChange = useCallback((
+  const handleUpdatePlacement = async () => {
+    DebugService.debug("handleUpdatePlacement called - starting update flow");
+
+    try {
+      const item = Office.context.mailbox.item;
+      if (item) {
+        await validateEmailFiles(item);
+        DebugService.debug("File validation completed in handleUpdatePlacement");
+      } else {
+        DebugService.warn("No Office item found in handleUpdatePlacement");
+      }
+    } catch (error) {
+      DebugService.error("File validation failed in handleUpdatePlacement:", error);
+    }
+    setIsUpdateMode(true);
+    setShowLanding(false);
+    setShowBUProducts(true);
+  };
+
+  const handleBUChange = (
     _event: React.FormEvent<HTMLDivElement>,
     option?: IDropdownOption
   ) => {
-    if (option?.key) setSelectedBU(option.key as any);
-  }, [setSelectedBU]);
+    setSelectedBU(option?.key as string);
+  };
 
   // Render
   // Security check - ensure we have valid tokens
@@ -548,7 +600,7 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
         </div>
       ) : (
         <>
-          {showLanding && <LandingSection onNewPlacement={handleLandingSave} />}
+          {showLanding && <LandingSection onNewPlacement={handleLandingSave} onUpdatePlacement={handleUpdatePlacement} />}
           {showBUProducts && (
             <BUProductsSection
               selectedProduct={selectedProduct}
@@ -562,8 +614,9 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
               onSubmit={handleSubmit}
               emailSubject={emailSubject}
               isDraftEmail={isDraftEmail}
-                    fileValidationError={fileValidationErrorMessage}
-                    isSubmitDisabled={isSubmitDisabled}
+              fileValidationError={FileValidationService.getAllErrorMessages(fileValidationResult.errors)}
+              isSubmitDisabled={!fileValidationResult.isValid || isValidatingFiles}
+              isUpdateMode={isUpdateMode}
             />
           )}
           <ConfirmationDialog

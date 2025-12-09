@@ -63,6 +63,13 @@ function normalizeRedirectUri(uri: string | undefined): string {
  * This ensures we use the correct values from runtime config
  */
 export function getMsalConfig(): Configuration {
+  // Check if runtime config is initialized
+  const isConfigInitialized = runtimeConfig.isInitialized();
+  if (!isConfigInitialized) {
+    DebugService.warn('[MSAL Config] ⚠️ Runtime config not initialized yet. Config values may be empty.');
+    DebugService.warn('[MSAL Config] Make sure runtimeConfig.initialize() is called before creating MSAL instance.');
+  }
+
   const redirectUriRaw = environment.AZURE_REDIRECT_URI;
   const clientId = environment.AZURE_CLIENT_ID;
   const authority = environment.AZURE_AUTHORITY;
@@ -70,12 +77,42 @@ export function getMsalConfig(): Configuration {
   // Normalize and validate redirect URI
   const redirectUri = normalizeRedirectUri(redirectUriRaw);
 
-  // Validate required values
-  if (!clientId || clientId === '') {
-    DebugService.error('[MSAL Config] ❌ ERROR: AZURE_CLIENT_ID is empty!');
-  }
-  if (!authority || authority === '') {
-    DebugService.error('[MSAL Config] ❌ ERROR: AZURE_AUTHORITY is empty!');
+  // Log config values for debugging
+  DebugService.debug('[MSAL Config] Creating MSAL configuration:', {
+    clientId: clientId || '(empty)',
+    authority: authority || '(empty)',
+    redirectUriRaw: redirectUriRaw || '(empty)',
+    redirectUri: redirectUri,
+    hasClientId: !!clientId && clientId !== '',
+    hasAuthority: !!authority && authority !== '',
+    hasRedirectUri: !!redirectUri && redirectUri !== '',
+    isConfigInitialized: isConfigInitialized,
+    detectedEnvironment: isConfigInitialized ? runtimeConfig.getEnvironment() : 'not loaded'
+  });
+
+  // Only log errors if config is initialized and values are still empty (real configuration problem)
+  // If config isn't initialized yet, it's just a timing issue and will be resolved
+  if (isConfigInitialized) {
+    if (!clientId || clientId === '') {
+      const detectedEnv = runtimeConfig.getEnvironment();
+      const allConfig = runtimeConfig.getAll();
+      DebugService.error('[MSAL Config] ❌ ERROR: AZURE_CLIENT_ID is empty!', {
+        detectedEnvironment: detectedEnv,
+        availableKeys: Object.keys(allConfig),
+        hasClientIdKey: 'REACT_APP_AZURE_CLIENT_ID' in allConfig,
+        clientIdValue: allConfig.REACT_APP_AZURE_CLIENT_ID
+      });
+    }
+    if (!authority || authority === '') {
+      const detectedEnv = runtimeConfig.getEnvironment();
+      const allConfig = runtimeConfig.getAll();
+      DebugService.error('[MSAL Config] ❌ ERROR: AZURE_AUTHORITY is empty!', {
+        detectedEnvironment: detectedEnv,
+        availableKeys: Object.keys(allConfig),
+        hasAuthorityKey: 'REACT_APP_AZURE_AUTHORITY' in allConfig,
+        authorityValue: allConfig.REACT_APP_AZURE_AUTHORITY
+      });
+    }
   }
 
   return {

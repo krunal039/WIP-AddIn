@@ -41,9 +41,21 @@ class AuthService {
     }
 
     try {
-      // Config should already be initialized before AuthService is used
+      // Wait for runtime config to be initialized before creating MSAL instance
       if (!runtimeConfig.isInitialized()) {
-        throw new Error('Runtime config not initialized. Make sure runtimeConfig.initialize() is called before using AuthService.');
+        DebugService.auth('Waiting for runtime config to initialize...');
+        // Wait a bit and check again (config should be loading)
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max wait
+        while (!runtimeConfig.isInitialized() && attempts < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 100));
+          attempts++;
+        }
+        
+        if (!runtimeConfig.isInitialized()) {
+          throw new Error('Runtime config not initialized after waiting. Make sure runtimeConfig.initialize() is called before using AuthService.');
+        }
+        DebugService.auth('Runtime config initialized, proceeding with MSAL initialization');
       }
 
       DebugService.auth('Initializing MSAL');
@@ -78,7 +90,7 @@ class AuthService {
 
   // Check if Office SSO is available
   public isOfficeSSOAvailable(): boolean {
-    return !!(Office && Office.context && (Office.context as any).auth);
+    return !!(Office && Office.context && Office.context.auth);
   }
 
   // Get token using Office SSO
@@ -90,9 +102,9 @@ class AuthService {
     try {
       DebugService.auth('Attempting Office SSO token acquisition');
       return new Promise((resolve, reject) => {
-        (Office.context as any).auth.getAccessTokenAsync({
+        Office.context.auth.getAccessTokenAsync({
           scopes: scopes,
-          callback: (result: Office.AsyncResult<string>) => {
+          callback: (result) => {
             if (result.status === Office.AsyncResultStatus.Succeeded) {
               DebugService.auth('Office SSO token acquired successfully');
               resolve(result.value || null);

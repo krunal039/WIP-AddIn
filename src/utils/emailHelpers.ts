@@ -77,9 +77,8 @@ export const getInternetMessageId = (item: Office.MessageRead | Office.MessageCo
     }
 
     // If not available directly, try to get it from internet headers
-    const messageItem = item as any;
-    if (messageItem.internetHeaders && typeof messageItem.internetHeaders.getAsync === 'function') {
-      messageItem.internetHeaders.getAsync(['Message-ID'], (result: Office.AsyncResult<any>) => {
+    if (item.internetHeaders && typeof item.internetHeaders.getAsync === 'function') {
+      item.internetHeaders.getAsync(['Message-ID'], (result: Office.AsyncResult<any>) => {
         if (result.status === Office.AsyncResultStatus.Succeeded) {
           const messageId = result.value && result.value['Message-ID'];
           resolve(messageId || null);

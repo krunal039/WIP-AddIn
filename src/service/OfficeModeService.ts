@@ -25,9 +25,6 @@ class OfficeModeService {
   public getCurrentMode(): OfficeMode {
     try {
       const item = Office.context.mailbox.item;
-      if (!item) {
-        return OfficeMode.UNKNOWN;
-      }
       
       // Check if we're in compose mode by looking for saveAsync method
       if (item.itemType === Office.MailboxEnums.ItemType.Message && (item as any).saveAsync) {
@@ -72,7 +69,7 @@ class OfficeModeService {
   public isMessageItem(): boolean {
     try {
       const item = Office.context.mailbox.item;
-      return !!(item && item.itemType === Office.MailboxEnums.ItemType.Message);
+      return item.itemType === Office.MailboxEnums.ItemType.Message;
     } catch (error) {
       DebugService.error('Failed to check if item is message:', error);
       return false;

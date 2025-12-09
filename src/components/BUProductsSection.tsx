@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dropdown,
   IDropdownOption,
@@ -8,8 +8,18 @@ import {
   PrimaryButton,
   MessageBar,
   MessageBarType,
+  ComboBox,
+  IComboBox,
+  IComboBoxOption
 } from "@fluentui/react";
 import './SharedGrid.css';
+import PlacementApiSearchService from "../service/PlacementApiSearchService";
+import AuthService from "../service/AuthService";
+
+interface ExtendedComboBoxOption extends IComboBoxOption {
+  insurerName?: string;
+  brokerName?: string;
+}
 
 const dropdownStyles: Partial<IDropdownStyles> = {
   dropdown: {
@@ -35,9 +45,10 @@ interface BUProductsSectionProps {
   isDraftEmail: boolean;
   fileValidationError?: string | null;
   isSubmitDisabled?: boolean;
+  isUpdateMode?: boolean;
 }
 
-const BUProductsSection: React.FC<BUProductsSectionProps> = React.memo(({
+const BUProductsSection: React.FC<BUProductsSectionProps> = ({
   selectedProduct,
   selectedBU,
   optionsProducts,
@@ -51,10 +62,61 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = React.memo(({
   isDraftEmail,
   fileValidationError,
   isSubmitDisabled: externalIsSubmitDisabled,
+  isUpdateMode,
 }) => {
   // Check if submit button should be disabled
   const isSubmitDisabled = externalIsSubmitDisabled || (isDraftEmail && (!emailSubject || emailSubject.trim() === ''));
-  
+  const [placements, setPlacements] = useState<ExtendedComboBoxOption[]>([]);
+  const [selectedPID, setSelectedPID] = useState<string | undefined>("");
+  const comboRef = useRef<IComboBox>(null);
+
+  const fetchPlacements = async (inputValue: string) => {
+    if (inputValue.trim() === "") {
+      setPlacements([]);
+      return;
+    }
+    try {
+      let apiTokenSearch = "";
+      await AuthService.getApiToken().then(value => {
+        apiTokenSearch = value?.accessToken || "";
+      });
+      const response = await PlacementApiSearchService.searchPlacementID(apiTokenSearch, {
+        productCode: selectedProduct,
+        searchString: inputValue,
+      });
+      
+      const options = response.map((placement) => ({
+        key: placement.placementId,
+        text: placement.placementId,
+        insurerName: placement.insuredName,
+        brokerName: placement.broker,
+      }));
+      setPlacements(options);
+    } catch (error) {
+      console.error("Error fetching placements:", error);
+    }
+  };
+
+ const handleInputValueChange = (text: string): void => {
+    // Clear placements if the input is empty
+    if (text.trim() === "") {
+      setPlacements([]);
+      return;
+    }
+ 
+    // Trigger API call only when the input length is 2 or more characters
+    if (text.length >= 2) {
+      fetchPlacements(text); // Fetch placements based on the input
+    } else {
+      setPlacements([]); // Clear placements when less than 2 characters
+    }
+    comboRef.current?.focus(true);
+  };
+
+  const onPIDChange = (_: any, option?: IComboBoxOption) => {
+    setSelectedPID(option?.key?.toString());
+  };
+
   return (
     <div className="ms-Grid" dir="ltr" id="maindiv">
       {/* File Validation Error Message */}
@@ -87,8 +149,8 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = React.memo(({
                 // Style the main message differently
                 if (index === 0) {
                   return (
-                    <div key={index} style={{ 
-                      marginBottom: '8px', 
+                    <div key={index} style={{
+                      marginBottom: '8px',
                       fontWeight: '600'
                     }}>
                       {line}
@@ -97,8 +159,8 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = React.memo(({
                 }
                 // Style bullet points
                 return (
-                  <div key={index} style={{ 
-                    marginLeft: '16px', 
+                  <div key={index} style={{
+                    marginLeft: '16px',
                     marginBottom: '4px'
                   }}>
                     {line}
@@ -109,7 +171,7 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = React.memo(({
           </div>
         </div>
       )}
-      
+
       <div className="ms-Grid savesection">
         <div className="ms-Grid-row">
           <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6 paddingtopalldivs">
@@ -118,7 +180,21 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = React.memo(({
               selectedKey={selectedProduct}
               defaultSelectedKey="20001"
               options={optionsProducts}
-              styles={dropdownStyles}
+              disabled={isUpdateMode}
+              styles={{
+                ...dropdownStyles,
+                dropdown: {
+                  backgroundColor: "transparent",
+                  cursor: "default",
+                },
+                label: { color: "#000000" },
+                title: {
+                  backgroundColor: "transparent",
+                  color: "#323130",
+                  border: "1px solid #8A8886",
+                },
+                caretDown: { color: "#605E5C" },
+              }}
               responsiveMode={ResponsiveMode.large}
               onChange={onProductChange}
               calloutProps={{
@@ -159,6 +235,49 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = React.memo(({
             />
           </div>
         </div>
+
+        {/* Placement ID ComboBox */}
+        {isUpdateMode && (
+          <div className="ms-Grid-row">
+            <div className="ms-Grid-col ms-sm12 ms-md6 ms-lg6 paddingtopalldivs">
+              <ComboBox
+                label="Placement ID"
+                componentRef={comboRef}
+                placeholder="Search for Placement ID / Insured"
+                selectedKey={selectedPID}
+                onInputValueChange={handleInputValueChange}
+                allowFreeform
+                autoComplete="on"
+                options={placements}
+                styles={{
+                  root: { width: "100%", position: "relative", backgroundColor: "transparent" },
+                  input: { paddingRight: 60 },
+                  callout: { minWidth: "100%" },
+                }}
+                onChange={onPIDChange}
+                onRenderOption={(option) => {
+                  const opt = option as ExtendedComboBoxOption;
+                  return (
+                    <div style={{ lineHeight: "1.4", padding: "4px 8px" }}>
+                      <div style={{ fontWeight: 600, color: "#323130" }}>{opt.text}</div>
+                      {opt.insurerName && (
+                        <div style={{ fontSize: 12, color: "#605E5C" }}>
+                          {opt.insurerName}
+                        </div>
+                      )}
+                      {opt.brokerName && (
+                        <div style={{ fontSize: 12, color: "#605E5C" }}>
+                          {opt.brokerName}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         {selectedProduct === "20001" && (
           <>
             <h3 style={{ marginBottom: 10, padding: "5px 4px" }}>
@@ -179,10 +298,10 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = React.memo(({
           </>
         )}
         {isDraftEmail && isSubmitDisabled && (
-          <div style={{ 
-            marginBottom: 10, 
-            padding: "8px 12px", 
-            color: "#d13438", 
+          <div style={{
+            marginBottom: 10,
+            padding: "8px 12px",
+            color: "#d13438",
             fontSize: "13px",
             backgroundColor: "#fde7e9",
             border: "1px solid #d13438",
@@ -210,11 +329,11 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = React.memo(({
                   opacity: isSubmitDisabled ? 0.6 : 1,
                   cursor: isSubmitDisabled ? "not-allowed" : "pointer",
                 },
-                rootHovered: { 
+                rootHovered: {
                   backgroundColor: isSubmitDisabled ? "#8A8886" : "#0F1E32",
                   opacity: isSubmitDisabled ? 0.6 : 1,
                 },
-                rootPressed: { 
+                rootPressed: {
                   backgroundColor: isSubmitDisabled ? "#8A8886" : "#0F1E32",
                   opacity: isSubmitDisabled ? 0.6 : 1,
                 },
@@ -225,8 +344,6 @@ const BUProductsSection: React.FC<BUProductsSectionProps> = React.memo(({
       </div>
     </div>
   );
-});
-
-BUProductsSection.displayName = 'BUProductsSection';
+};
 
 export default BUProductsSection; 

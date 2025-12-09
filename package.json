@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo todo",
     "prebuild": "node scripts/log-env.js",
-    "start": "concurrently \"webpack serve --mode development --open\"",
+    "start": "concurrently \"node proxy-server.js\" \"webpack serve --mode development --open\"",
     "build": "webpack --config webpack.config.js --mode production --progress",
     "postbuild": "node -e \"const fs=require('fs'); fs.copyFileSync('staticwebapp.config.json', 'dist/staticwebapp.config.json');\"",
     "lint": "eslint src --ext .ts,.tsx",

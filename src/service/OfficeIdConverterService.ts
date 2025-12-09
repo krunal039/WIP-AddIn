@@ -24,7 +24,7 @@ class OfficeIdConverterService {
   public async convertToRestId(exchangeId: string): Promise<string> {
     return new Promise((resolve, reject) => {
       try {
-        (Office.context.mailbox as any).convertToRestId(
+        Office.context.mailbox.convertToRestId(
           [exchangeId],
           Office.MailboxEnums.RestVersion.v2_0,
           (result: Office.AsyncResult<string[]>) => {
@@ -55,7 +55,7 @@ class OfficeIdConverterService {
   public async convertMultipleToRestIds(exchangeIds: string[]): Promise<string[]> {
     return new Promise((resolve, reject) => {
       try {
-        (Office.context.mailbox as any).convertToRestId(
+        Office.context.mailbox.convertToRestId(
           exchangeIds,
           Office.MailboxEnums.RestVersion.v2_0,
           (result: Office.AsyncResult<string[]>) => {
