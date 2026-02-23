@@ -495,6 +495,7 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
       DebugService.error('File validation failed in handleLandingSave:', error);
     }
     
+    setIsUpdateMode(false);
     setShowLanding(false);
     setShowBUProducts(true);
   };
@@ -506,8 +507,12 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     setShowLoadingMessage(false);
     setShowConfirmationDialog(false);
     // Go to previous logical screen
-    setShowLanding(false);
-    setShowBUProducts(true);
+    if (showBUProducts) {
+      // From BUProducts, go back to Landing
+      setShowLanding(true);
+      setShowBUProducts(false);
+      setIsUpdateMode(false);
+    }
   };
 
   const handleHome = () => {
@@ -520,7 +525,8 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
     // Go to landing screen
     setShowLanding(true);
     setShowBUProducts(false);
-    // Optionally reset other state as needed
+    // Reset navigation state
+    setIsUpdateMode(false);
   };
 
   const handleProductChange = (
