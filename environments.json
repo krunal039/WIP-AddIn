@@ -1,11 +1,11 @@
 {
   "environments": {
     "localhost": {
-      "REACT_APP_AZURE_CLIENT_ID": "ac5a0071-e224-401f-a7e6-d401e1fc5ff8",
-      "REACT_APP_AZURE_TENANT_ID": "cc83b6ac-505f-4efc-a552-a2c7bfa6d7e3",
-      "REACT_APP_AZURE_AUTHORITY": "https://login.microsoftonline.com/cc83b6ac-505f-4efc-a552-a2c7bfa6d7e3",
-      "REACT_APP_AZURE_REDIRECT_URI": "https://localhost:3001",
-      "REACT_APP_AZURE_API_SCOPES": "ac5a0071-e224-401f-a7e6-d401e1fc5ff8/.default",
+      "REACT_APP_AZURE_CLIENT_ID": "a0ec6f14-47ca-4e3e-bf43-5ea8ff5a05c2",
+      "REACT_APP_AZURE_TENANT_ID": "582259a1-dcaa-4cca-b1cf-e60d3f045ecd",
+      "REACT_APP_AZURE_AUTHORITY": "https://login.microsoftonline.com/582259a1-dcaa-4cca-b1cf-e60d3f045ecd",
+      "REACT_APP_AZURE_REDIRECT_URI": "https://gsi-email-ingestion-request-dev.munichre.com/",
+      "REACT_APP_AZURE_API_SCOPES": "a0ec6f14-47ca-4e3e-bf43-5ea8ff5a05c2/.default",
       "REACT_APP_AZURE_GRAPH_SCOPES": "Mail.ReadWrite,Mail.Send",
       "REACT_APP_AZURE_GLOBAL_SCOPES": "openid,profile,offline_access",
       "REACT_APP_PLACEMENT_API_URL": "https://gsi-email-ingestion-request-dev.munichre.com/api/placements",
@@ -19,7 +19,12 @@
       "REACT_APP_TEST_ENV_VARS": false,
       "REACT_APP_TEST_MSAL_CONFIG": false,
       "REACT_APP_TEST_MSAL_SETUP": false,
-      "REACT_APP_TEST_MSAL_FULL": false
+      "REACT_APP_TEST_MSAL_FULL": false,
+      "FEATURE_NEW_PLACEMENT": true,
+      "FEATURE_UPDATE_PLACEMENT": true,
+      "FEATURE_PRODUCT_CYBER": true,
+      "FEATURE_PRODUCT_NA_LPL": true,
+      "FEATURE_PRODUCT_NA_MPL": true
     },
     "dev": {
       "REACT_APP_AZURE_CLIENT_ID": "a0ec6f14-47ca-4e3e-bf43-5ea8ff5a05c2",
@@ -40,7 +45,12 @@
       "REACT_APP_TEST_ENV_VARS": true,
       "REACT_APP_TEST_MSAL_CONFIG": true,
       "REACT_APP_TEST_MSAL_SETUP": true,
-      "REACT_APP_TEST_MSAL_FULL": true
+      "REACT_APP_TEST_MSAL_FULL": true,
+      "FEATURE_NEW_PLACEMENT": true,
+      "FEATURE_UPDATE_PLACEMENT": true,
+      "FEATURE_PRODUCT_CYBER": true,
+      "FEATURE_PRODUCT_NA_LPL": true,
+      "FEATURE_PRODUCT_NA_MPL": true
     },
     "qa": {
       "REACT_APP_AZURE_CLIENT_ID": "5d794362-3dc4-49ee-88b3-24b913612cec",
@@ -61,7 +71,12 @@
       "REACT_APP_TEST_ENV_VARS": true,
       "REACT_APP_TEST_MSAL_CONFIG": true,
       "REACT_APP_TEST_MSAL_SETUP": true,
-      "REACT_APP_TEST_MSAL_FULL": true
+      "REACT_APP_TEST_MSAL_FULL": true,
+      "FEATURE_NEW_PLACEMENT": true,
+      "FEATURE_UPDATE_PLACEMENT": true,
+      "FEATURE_PRODUCT_CYBER": true,
+      "FEATURE_PRODUCT_NA_LPL": true,
+      "FEATURE_PRODUCT_NA_MPL": true
     },
     "uat": {
       "REACT_APP_AZURE_CLIENT_ID": "40deb33e-93f5-44bf-88b9-67ecddc983d3",
@@ -82,7 +97,12 @@
       "REACT_APP_TEST_ENV_VARS": true,
       "REACT_APP_TEST_MSAL_CONFIG": true,
       "REACT_APP_TEST_MSAL_SETUP": true,
-      "REACT_APP_TEST_MSAL_FULL": true
+      "REACT_APP_TEST_MSAL_FULL": true,
+      "FEATURE_NEW_PLACEMENT": true,
+      "FEATURE_UPDATE_PLACEMENT": false,
+      "FEATURE_PRODUCT_CYBER": true,
+      "FEATURE_PRODUCT_NA_LPL": true,
+      "FEATURE_PRODUCT_NA_MPL": true
     },
     "prod": {
       "REACT_APP_AZURE_CLIENT_ID": "40deb33e-93f5-44bf-88b9-67ecddc983d3",
@@ -103,7 +123,12 @@
       "REACT_APP_TEST_ENV_VARS": true,
       "REACT_APP_TEST_MSAL_CONFIG": true,
       "REACT_APP_TEST_MSAL_SETUP": true,
-      "REACT_APP_TEST_MSAL_FULL": true
+      "REACT_APP_TEST_MSAL_FULL": true,
+      "FEATURE_NEW_PLACEMENT": true,
+      "FEATURE_UPDATE_PLACEMENT": false,
+      "FEATURE_PRODUCT_CYBER": true,
+      "FEATURE_PRODUCT_NA_LPL": true,
+      "FEATURE_PRODUCT_NA_MPL": true
     }
   },
   "urlPatterns": {

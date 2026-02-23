@@ -35,6 +35,7 @@ import FileValidationService, { FileValidationResult } from "../service/FileVali
 import LandingSection from "./LandingSection";
 import BUProductsSection from "./BUProductsSection";
 import WorkbenchHeader from "./WorkbenchHeader";
+import { useEnabledProducts } from "../hooks/useFeatureFlag";
 
 export interface WorkbenchLandingProps {
   apiToken: string | null;
@@ -70,6 +71,11 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
   graphToken,
 }) => {
   const workbenchService = WorkbenchService.getInstance();
+  const enabledProductKeys = useEnabledProducts();
+  
+  const filteredProducts = optionsProducts.filter(
+    (product) => enabledProductKeys.includes(product.key as string)
+  );
 
   // State
   const [showLanding, setShowLanding] = useState(true);
@@ -611,7 +617,7 @@ const WorkbenchLanding: React.FC<WorkbenchLandingProps> = ({
             <BUProductsSection
               selectedProduct={selectedProduct}
               selectedBU={selectedBU}
-              optionsProducts={optionsProducts}
+              optionsProducts={filteredProducts}
               optionsBU={optionsBU}
               onProductChange={handleProductChange}
               onBUChange={handleBUChange}
